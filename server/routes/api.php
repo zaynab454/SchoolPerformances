@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\EtablissementController;
 use App\Http\Controllers\Api\ImportController;
 use App\Http\Controllers\Api\RapportController;
 use App\Http\Controllers\Api\ParametreController;
+use App\Http\Controllers\Api\AnneeScolaireController;
 
 // Routes API d'authentification
 Route::prefix('auth')->group(function () {
@@ -28,7 +29,15 @@ Route::prefix('province')->group(function () {
 
 // Routes API pour les communes
 Route::prefix('commune')->group(function () {
+    // Get all communes
     Route::get('/', [CommuneController::class, 'index']);
+    // Get a specific commune
+    Route::get('/{id}', [CommuneController::class, 'show']);
+    // Get all academic years for selection
+    Route::get('/annees', [CommuneController::class, 'getAnneesScolaires']);
+    // Get all communes for selection
+    Route::get('/communes', [CommuneController::class, 'getCommunes']);
+    // Get commune statistics
     Route::get('/{id_commune}/stats/{annee_scolaire?}', [CommuneController::class, 'statCommune']);
     Route::get('/{id_commune}/evolution', [CommuneController::class, 'evolutionCommune']);
 });
@@ -50,6 +59,9 @@ Route::prefix('rapports')->group(function () {
 
 // Route API pour l'importation
 Route::prefix('import')->group(function () {
+    Route::get('/annees', [ImportController::class, 'getAnneesScolaires']);
+    Route::post('/annee', [ImportController::class, 'addAnneeScolaire']);
+    Route::post('/annee/select', [ImportController::class, 'selectAnneeScolaire']);
     Route::post('/resultats', [ImportController::class, 'importResultats']);
 });
 
@@ -67,4 +79,13 @@ Route::prefix('import')->group(function () {
         Route::get('/user', function (Request $request) {
             return $request->user();
         });
+    });
+
+// Routes API pour les années scolaires
+Route::prefix('annees-scolaires')->group(function () {
+    Route::get('/', [AnneeScolaireController::class, 'index']);
+    Route::post('/', [AnneeScolaireController::class, 'store']);
+    Route::put('/{id}', [AnneeScolaireController::class, 'update']);
+    Route::delete('/{id}', [AnneeScolaireController::class, 'destroy']);
+    Route::post('/{id}/set-courante', [AnneeScolaireController::class, 'setCourante']);
 });

@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+class CreateNiveauScolaireTable extends Migration
 {
     /**
      * Run the migrations.
@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('niveau_scolaire', function (Blueprint $table) {
-            $table->string('code_niveau', 10)->primary();
-            $table->string('description', 100)->nullable();
+            $table->char('code_niveau', 5)->primary();
+            $table->string('description', 50)->nullable();
             $table->timestamps();
         });
     }
@@ -25,4 +25,4 @@ return new class extends Migration
     {
         Schema::dropIfExists('niveau_scolaire');
     }
-};
+}

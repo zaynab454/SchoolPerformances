@@ -9,12 +9,26 @@ use App\Models\Eleve;
 use App\Models\ResultatEleve;
 use App\Models\Commune;
 use App\Models\Matiere;
+use App\Models\AnneeScolaire;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use SimpleXMLElement;
+use Illuminate\Support\Facades\Validator;
 
 class ImportController extends Controller
 {
+    /**
+     * Get all academic years
+     */
+    public function getAnneesScolaires()
+    {
+        $annees = AnneeScolaire::orderBy('annee_scolaire', 'desc')->get();
+        return response()->json([
+            'success' => true,
+            'data' => $annees
+        ]);
+    }
+
     public function importResultats(Request $request)
     {
         try {
@@ -36,6 +50,27 @@ class ImportController extends Controller
                 ], 400);
             }
 
+            // Vérifier l'année scolaire active
+            $anneeScolaire = AnneeScolaire::where('est_courante', true)->first();
+            if (!$anneeScolaire) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Aucune année scolaire active n\'est définie. Veuillez sélectionner une année scolaire avant d\'importer les données.'
+                ], 400);
+            }
+
+            // Vérifier si l'année scolaire est spécifiée dans la requête
+            if ($request->has('annee_scolaire')) {
+                $anneeSpecifiee = AnneeScolaire::where('annee_scolaire', $request->annee_scolaire)->first();
+                if (!$anneeSpecifiee) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'L\'année scolaire spécifiée n\'existe pas'
+                    ], 400);
+                }
+                $anneeScolaire = $anneeSpecifiee;
+            }
+
             DB::beginTransaction();
             $imported = 0;
             $errors = [];
@@ -43,14 +78,14 @@ class ImportController extends Controller
             // Traiter le fichier selon son extension
             switch ($extension) {
                 case 'csv':
-                    $this->processCSV($file, $imported, $errors);
+                    $this->processCSV($file, $imported, $errors, $anneeScolaire);
                     break;
                 case 'xml':
-                    $this->processXML($file, $imported, $errors);
+                    $this->processXML($file, $imported, $errors, $anneeScolaire);
                     break;
                 case 'xlsx':
                 case 'xls':
-                    $this->processExcel($file, $imported, $errors);
+                    $this->processExcel($file, $imported, $errors, $anneeScolaire);
                     break;
             }
 
@@ -58,7 +93,11 @@ class ImportController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => "Importation terminée avec succès. $imported lignes importées.",
+                'message' => "Importation terminée avec succès. $imported lignes importées pour l'année scolaire {$anneeScolaire->annee_scolaire}.",
+                'data' => [
+                    'annee_scolaire' => $anneeScolaire->annee_scolaire,
+                    'lignes_importees' => $imported
+                ],
                 'errors' => $errors
             ]);
 
@@ -73,7 +112,7 @@ class ImportController extends Controller
         }
     }
 
-    private function processCSV($file, &$imported, &$errors)
+    private function processCSV($file, &$imported, &$errors, $anneeScolaire)
     {
         $handle = fopen($file->getPathname(), 'r');
         $header = fgetcsv($handle, 1000, ',');
@@ -81,7 +120,7 @@ class ImportController extends Controller
         while (($data = fgetcsv($handle, 1000, ',')) !== false) {
             try {
                 $row = array_combine($header, $data);
-                $this->processRow($row, $imported);
+                $this->processRow($row, $imported, $anneeScolaire);
             } catch (\Exception $e) {
                 $errors[] = "Erreur à la ligne " . ($imported + 1) . ": " . $e->getMessage();
                 Log::error("Erreur d'importation CSV: " . $e->getMessage());
@@ -91,7 +130,7 @@ class ImportController extends Controller
         fclose($handle);
     }
 
-    private function processXML($file, &$imported, &$errors)
+    private function processXML($file, &$imported, &$errors, $anneeScolaire)
     {
         $xml = new SimpleXMLElement($file->getPathname(), 0, true);
 
@@ -101,7 +140,7 @@ class ImportController extends Controller
                 foreach ($row as $key => $value) {
                     $data[$key] = (string)$value;
                 }
-                $this->processRow($data, $imported);
+                $this->processRow($data, $imported, $anneeScolaire);
             } catch (\Exception $e) {
                 $errors[] = "Erreur à la ligne " . ($imported + 1) . ": " . $e->getMessage();
                 Log::error("Erreur d'importation XML: " . $e->getMessage());
@@ -109,7 +148,7 @@ class ImportController extends Controller
         }
     }
 
-    private function processExcel($file, &$imported, &$errors)
+    private function processExcel($file, &$imported, &$errors, $anneeScolaire)
     {
         $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReaderForFile($file->getPathname());
         $spreadsheet = $reader->load($file->getPathname());
@@ -136,7 +175,7 @@ class ImportController extends Controller
                     $data[$header[$i]] = $cell->getValue();
                     $i++;
                 }
-                $this->processRow($data, $imported);
+                $this->processRow($data, $imported, $anneeScolaire);
             } catch (\Exception $e) {
                 $errors[] = "Erreur à la ligne " . ($imported + 1) . ": " . $e->getMessage();
                 Log::error("Erreur d'importation Excel: " . $e->getMessage());
@@ -144,61 +183,58 @@ class ImportController extends Controller
         }
     }
 
-    private function processRow($row, &$imported)
+    private function processRow($row, &$imported, $anneeScolaire)
     {
+        // Validation des données requises
+        $requiredFields = ['CD_ETAB', 'NOM_ETABA', 'la_com', 'codeEleve', 'nomEleveAr', 'prenomEleveAr', 'Suffix'];
+        foreach ($requiredFields as $field) {
+            if (!isset($row[$field]) || empty($row[$field])) {
+                throw new \Exception("Le champ $field est requis");
+            }
+        }
+
         // Créer ou récupérer la commune
         $commune = Commune::firstOrCreate(
             ['la_com' => $row['la_com']],
             [
-                'la_com' => $row['la_com'],
                 'll_com' => $row['la_com'],
-                'cd_com' => str_pad($imported + 1, 5, '0', STR_PAD_LEFT)
+                'cd_com' => 'COM_' . str_pad($imported + 1, 4, '0', STR_PAD_LEFT),
+                'id_province' => 'PROV_0001'
             ]
         );
 
-        // Créer ou récupérer l’établissement
+        // Créer ou récupérer l'établissement
         $etablissement = Etablissement::firstOrCreate(
             ['code_etab' => $row['CD_ETAB']],
             [
-                'nom_etab' => $row['NOM_ETABA'],
+                'nom_etab_fr' => $row['NOM_ETABA'],
                 'code_commune' => $commune->cd_com
             ]
         );
 
-        // Créer ou récupérer l’élève
+        // Créer ou récupérer l'élève
         $eleve = Eleve::firstOrCreate(
             ['code_eleve' => $row['codeEleve']],
             [
-                'code_eleve' => $row['codeEleve'],
                 'nom_eleve_ar' => $row['nomEleveAr'],
                 'prenom_eleve_ar' => $row['prenomEleveAr'],
-                'code_etab' => $row['CD_ETAB'],
+                'code_etab' => $etablissement->code_etab,
                 'code_niveau' => $row['Suffix']
             ]
         );
 
-        // Créer ou récupérer la matière
-        $matiere = Matiere::firstOrCreate(
-            ['nom_matiere' => $row['MatiereAr']],
-            [
-                'nom_matiere' => $row['MatiereAr'],
-                'nom_colonne' => strtolower(str_replace(' ', '_', $row['MatiereAr']))
-            ]
-        );
-
-        // Créer ou mettre à jour le résultat
+        // Créer ou mettre à jour le résultat pour l'année scolaire spécifiée
         ResultatEleve::updateOrCreate(
             [
                 'code_eleve' => $eleve->code_eleve,
-                'id_matiere' => $matiere->id_matiere,
-                'annee_scolaire' => date('Y') . '-' . (date('Y') + 1)
+                'annee_scolaire' => $anneeScolaire->annee_scolaire
             ],
             [
-                'MoyenNoteCC' => $row['MoyenneNoteCC_Note'],
-                'MoyenExamenNote' => $row['NoteExamen_Note'],
-                'MoyenCC' => $row['MoynneCC'],
-                'MoyenExam' => $row['MoyenneExam'],
-                'MoyenSession' => $row['MoyenneSession']
+                'MoyenNoteCC' => $row['MoyenneNoteCC_Note'] ?? 0,
+                'MoyenExamenNote' => $row['NoteExamen_Note'] ?? 0,
+                'MoyenCC' => $row['MoynneCC'] ?? 0,
+                'MoyenExam' => $row['MoyenneExam'] ?? 0,
+                'MoyenSession' => $row['MoyenneSession'] ?? 0
             ]
         );
 

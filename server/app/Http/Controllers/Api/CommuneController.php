@@ -9,32 +9,46 @@ use App\Models\Etablissement;
 use App\Models\Eleve;
 use App\Models\ResultatEleve;
 use App\Models\NiveauScolaire;
+use App\Models\AnneeScolaire;
 use Illuminate\Support\Facades\DB;
 
 class CommuneController extends Controller
 {
-    public function index()
+    /**
+     * Get all academic years for selection
+     */
+    public function getAnneesScolaires()
     {
-        $communes = Commune::with(['province', 'etablissements'])->get();
-
+        $annees = AnneeScolaire::all();
         return response()->json([
             'success' => true,
-            'data' => $communes
+            'annees' => $annees
         ]);
     }
 
-    public function show($id)
+    /**
+     * Get all communes for selection
+     */
+    public function getCommunes()
     {
-        $commune = Commune::with(['province', 'etablissements'])->findOrFail($id);
-
+        $communes = Commune::with('province')->get();
         return response()->json([
             'success' => true,
-            'data' => $commune
+            'communes' => $communes
         ]);
     }
+
 
     public function statCommune($id_commune, $annee_scolaire = null)
     {
+        // Get the active academic year if none is provided
+        if (!$annee_scolaire) {
+            $anneeScolaire = AnneeScolaire::where('active', true)->first();
+            if ($anneeScolaire) {
+                $annee_scolaire = $anneeScolaire->annee;
+            }
+        }
+
         // Récupérer la commune
         $commune = Commune::with(['province', 'etablissements'])->findOrFail($id_commune);
 
@@ -297,3 +311,4 @@ class CommuneController extends Controller
         ];
     }
 }
+
