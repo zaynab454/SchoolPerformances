@@ -14,6 +14,9 @@ return new class extends Migration
         Schema::create('matiere', function (Blueprint $table) {
             $table->id('id_matiere');
             $table->string('nom_matiere_ar', 100)->unique();
+            $table->string('code_niveau');
+            $table->string('nom_colonne');
+            $table->foreign('code_niveau')->references('code_niveau')->on('niveau_scolaire')->onDelete('cascade');
             $table->timestamps();
         });
     }

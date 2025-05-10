@@ -13,16 +13,16 @@ class MatiereSeeder extends Seeder
     public function run(): void
     {
         $matieres = [
-            ['nom_matiere_ar' => 'اللغة العربية'],
-            ['nom_matiere_ar' => 'اللغة الفرنسية'],
-            ['nom_matiere_ar' => 'الرياضيات'],
-            ['nom_matiere_ar' => 'العلوم الطبيعية'],
-            ['nom_matiere_ar' => 'العلوم الاجتماعية'],
-            ['nom_matiere_ar' => 'التربية الإسلامية'],
-            ['nom_matiere_ar' => 'التربية البدنية'],
-            ['nom_matiere_ar' => 'التربية الفنية'],
-            ['nom_matiere_ar' => 'التربية الموسيقية'],
-            ['nom_matiere_ar' => 'التربية التكنولوجية']
+            ['nom_matiere_ar' => 'اللغة العربية', 'code_niveau' => 'PRIM1', 'nom_colonne' => 'MoyenNoteCC'],
+            ['nom_matiere_ar' => 'اللغة الفرنسية', 'code_niveau' => 'PRIM1', 'nom_colonne' => 'MoyenNoteCC'],
+            ['nom_matiere_ar' => 'الرياضيات', 'code_niveau' => 'PRIM1', 'nom_colonne' => 'MoyenNoteCC'],
+            ['nom_matiere_ar' => 'العلوم الطبيعية', 'code_niveau' => 'PRIM1', 'nom_colonne' => 'MoyenNoteCC'],
+            ['nom_matiere_ar' => 'العلوم الاجتماعية', 'code_niveau' => 'PRIM1', 'nom_colonne' => 'MoyenNoteCC'],
+            ['nom_matiere_ar' => 'التربية الإسلامية', 'code_niveau' => 'PRIM1', 'nom_colonne' => 'MoyenNoteCC'],
+            ['nom_matiere_ar' => 'التربية البدنية', 'code_niveau' => 'PRIM1', 'nom_colonne' => 'MoyenNoteCC'],
+            ['nom_matiere_ar' => 'التربية الفنية', 'code_niveau' => 'PRIM1', 'nom_colonne' => 'MoyenNoteCC'],
+            ['nom_matiere_ar' => 'التربية موسيقية', 'code_niveau' => 'PRIM1', 'nom_colonne' => 'MoyenNoteCC'],
+            ['nom_matiere_ar' => 'التربية تكنولوجية', 'code_niveau' => 'PRIM1', 'nom_colonne' => 'MoyenNoteCC']
         ];
 
         foreach ($matieres as $matiere) {

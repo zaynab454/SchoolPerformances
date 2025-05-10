@@ -211,7 +211,7 @@ class ImportController extends Controller
                 'code_commune' => $commune->cd_com
             ]
         );
-
+    
         // Créer ou récupérer l'élève
         $eleve = Eleve::firstOrCreate(
             ['code_eleve' => $row['codeEleve']],
@@ -222,7 +222,7 @@ class ImportController extends Controller
                 'code_niveau' => $row['Suffix']
             ]
         );
-
+    
         // Créer ou mettre à jour le résultat pour l'année scolaire spécifiée
         ResultatEleve::updateOrCreate(
             [
@@ -237,7 +237,7 @@ class ImportController extends Controller
                 'MoyenSession' => $row['MoyenneSession'] ?? 0
             ]
         );
-
+    
         $imported++;
     }
 }

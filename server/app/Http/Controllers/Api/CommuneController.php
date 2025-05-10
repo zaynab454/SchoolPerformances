@@ -10,7 +10,7 @@ use App\Models\Eleve;
 use App\Models\ResultatEleve;
 use App\Models\NiveauScolaire;
 use App\Models\AnneeScolaire;
-use Illuminate\Support\Facades\DB;
+
 
 class CommuneController extends Controller
 {
@@ -30,85 +30,102 @@ class CommuneController extends Controller
         ]);
     }
 
-
     public function statCommune($id_commune, $annee_scolaire = null)
     {
         // Get the active academic year if none is provided
         if (!$annee_scolaire) {
-            $anneeScolaire = AnneeScolaire::where('active', true)->first();
+            $anneeScolaire = AnneeScolaire::where('est_courante', true)->first();
             if ($anneeScolaire) {
-                $annee_scolaire = $anneeScolaire->annee;
+                $annee_scolaire = $anneeScolaire->annee_scolaire;
             }
         }
 
         // Récupérer la commune
-        $commune = Commune::with(['province', 'etablissements'])->findOrFail($id_commune);
+        $commune = Commune::with('province')->findOrFail($id_commune);
 
-        // Nombre d'élèves dans la commune
-        $nombreEleves = Eleve::whereHas('etablissement', function($query) use ($id_commune) {
-            $query->where('id_commune', $id_commune);
-        })->when($annee_scolaire, function($query) use ($annee_scolaire) {
-            $query->whereHas('resultats', function($q) use ($annee_scolaire) {
-                $q->where('annee_scolaire', $annee_scolaire);
-            });
-        })->count();
+        // Calculer les statistiques
+        $nombreEleves = ResultatEleve::join('eleve', 'resultat_eleve.code_eleve', '=', 'eleve.code_eleve')
+            ->join('etablissement', 'eleve.code_etab', '=', 'etablissement.code_etab')
+            ->where('etablissement.code_commune', $id_commune)
+            ->when($annee_scolaire, function($query) use ($annee_scolaire) {
+                $query->where('resultat_eleve.annee_scolaire', $annee_scolaire);
+            })
+            ->distinct()
+            ->count('eleve.code_eleve');
 
-        // Moyenne générale de la commune
-        $moyenneGenerale = ResultatEleve::whereHas('eleve.etablissement', function($query) use ($id_commune) {
-            $query->where('id_commune', $id_commune);
-        })->when($annee_scolaire, function($query) use ($annee_scolaire) {
-            $query->where('annee_scolaire', $annee_scolaire);
-        })->avg('MoyenSession');
+        $moyenneGenerale = ResultatEleve::join('eleve', 'resultat_eleve.code_eleve', '=', 'eleve.code_eleve')
+            ->join('etablissement', 'eleve.code_etab', '=', 'etablissement.code_etab')
+            ->where('etablissement.code_commune', $id_commune)
+            ->when($annee_scolaire, function($query) use ($annee_scolaire) {
+                $query->where('resultat_eleve.annee_scolaire', $annee_scolaire);
+            })
+            ->avg('resultat_eleve.MoyenSession') ?? 0;
 
-        // Taux de réussite
-        $totalResultats = ResultatEleve::whereHas('eleve.etablissement', function($query) use ($id_commune) {
-            $query->where('id_commune', $id_commune);
-        })->when($annee_scolaire, function($query) use ($annee_scolaire) {
-            $query->where('annee_scolaire', $annee_scolaire);
-        })->count();
+        $totalResultats = ResultatEleve::join('eleve', 'resultat_eleve.code_eleve', '=', 'eleve.code_eleve')
+            ->join('etablissement', 'eleve.code_etab', '=', 'etablissement.code_etab')
+            ->where('etablissement.code_commune', $id_commune)
+            ->when($annee_scolaire, function($query) use ($annee_scolaire) {
+                $query->where('resultat_eleve.annee_scolaire', $annee_scolaire);
+            })
+            ->count();
 
-        $reussis = ResultatEleve::whereHas('eleve.etablissement', function($query) use ($id_commune) {
-            $query->where('id_commune', $id_commune);
-        })->when($annee_scolaire, function($query) use ($annee_scolaire) {
-            $query->where('annee_scolaire', $annee_scolaire);
-        })->where('MoyenSession', '>=', 10)->count();
+        $reussis = ResultatEleve::join('eleve', 'resultat_eleve.code_eleve', '=', 'eleve.code_eleve')
+            ->join('etablissement', 'eleve.code_etab', '=', 'etablissement.code_etab')
+            ->where('etablissement.code_commune', $id_commune)
+            ->when($annee_scolaire, function($query) use ($annee_scolaire) {
+                $query->where('resultat_eleve.annee_scolaire', $annee_scolaire);
+            })
+            ->where('resultat_eleve.MoyenSession', '>=', 10)
+            ->count();
 
         $tauxReussite = $totalResultats > 0 ? ($reussis / $totalResultats) * 100 : 0;
         $tauxEchec = 100 - $tauxReussite;
 
-        // Rang de la commune dans la province
-        $rangCommune = DB::table('resultat_eleves')
-            ->join('eleves', 'resultat_eleves.id_eleve', '=', 'eleves.id_eleve')
-            ->join('etablissements', 'eleves.id_etablissement', '=', 'etablissements.id_etablissement')
-            ->join('communes', 'etablissements.id_commune', '=', 'communes.id_commune')
-            ->where('communes.id_province', $commune->id_province)
+        // Calculer le rang de la commune dans sa province
+        $rangCommune = ResultatEleve::join('eleve', 'resultat_eleve.code_eleve', '=', 'eleve.code_eleve')
+            ->join('etablissement', 'eleve.code_etab', '=', 'etablissement.code_etab')
+            ->join('commune', 'etablissement.code_commune', '=', 'commune.cd_com')
+            ->where('commune.id_province', $commune->id_province)
             ->when($annee_scolaire, function($query) use ($annee_scolaire) {
-                $query->where('resultat_eleves.annee_scolaire', $annee_scolaire);
+                $query->where('resultat_eleve.annee_scolaire', $annee_scolaire);
             })
-            ->select('communes.id_commune', DB::raw('AVG(resultat_eleves.MoyenSession) as moyenne'))
-            ->groupBy('communes.id_commune')
+            ->select('commune.cd_com as id_commune')
+            ->selectRaw('AVG(resultat_eleve.MoyenSession) as moyenne')
+            ->groupBy('commune.cd_com')
             ->orderByDesc('moyenne')
             ->get()
             ->search(function($item) use ($id_commune) {
                 return $item->id_commune == $id_commune;
             });
 
-        // Classement des établissements dans la commune
-        $classementEtablissements = DB::table('resultat_eleves')
-            ->join('eleves', 'resultat_eleves.id_eleve', '=', 'eleves.id_eleve')
-            ->join('etablissements', 'eleves.id_etablissement', '=', 'etablissements.id_etablissement')
-            ->where('etablissements.id_commune', $id_commune)
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'statistiques' => [
+                    'nombre_eleves' => $nombreEleves,
+                    'moyenne_generale' => round($moyenneGenerale, 2),
+                    'taux_reussite' => round($tauxReussite, 2),
+                    'taux_echec' => round($tauxEchec, 2),
+                    'rang_province' => $rangCommune !== false ? $rangCommune + 1 : null
+                ]
+            ]
+        ]);
+    }
+
+    public function getClassementEtablissements($id_commune, $annee_scolaire)
+    {
+        return ResultatEleve::join('eleve', 'resultat_eleve.code_eleve', '=', 'eleve.code_eleve')
+            ->join('etablissement', 'eleve.code_etab', '=', 'etablissement.code_etab')
+            ->where('etablissement.code_commune', $id_commune)
             ->when($annee_scolaire, function($query) use ($annee_scolaire) {
-                $query->where('resultat_eleves.annee_scolaire', $annee_scolaire);
+                $query->where('resultat_eleve.annee_scolaire', $annee_scolaire);
             })
-            ->select(
-                'etablissements.id_etablissement',
-                'etablissements.nom_etablissement',
-                DB::raw('COUNT(DISTINCT eleves.id_eleve) as nombre_eleves'),
-                DB::raw('AVG(resultat_eleves.MoyenSession) as moyenne_generale'),
-                DB::raw('COUNT(CASE WHEN resultat_eleves.MoyenSession >= 10 THEN 1 END) * 100.0 / COUNT(*) as taux_reussite')
-            )
-            ->groupBy('etablissements.id_etablissement', 'etablissements.nom_etablissement')
+            ->select('etablissement.code_etab as id_etablissement')
+            ->select('etablissement.nom_etab_fr as nom_etablissement')
+            ->selectRaw('COUNT(DISTINCT eleve.code_eleve) as nombre_eleves')
+            ->selectRaw('AVG(resultat_eleve.MoyenSession) as moyenne_generale')
+            ->selectRaw('COUNT(CASE WHEN resultat_eleve.MoyenSession >= 10 THEN 1 END) * 100.0 / COUNT(*) as taux_reussite')
+            ->groupBy('etablissement.code_etab', 'etablissement.nom_etab_fr')
             ->orderByDesc('moyenne_generale')
             ->get()
             ->map(function($etablissement, $index) {
@@ -121,21 +138,6 @@ class CommuneController extends Controller
                     'taux_reussite' => round($etablissement->taux_reussite, 2)
                 ];
             });
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'commune' => $commune,
-                'statistiques' => [
-                    'nombre_eleves' => $nombreEleves,
-                    'moyenne_generale' => round($moyenneGenerale, 2),
-                    'taux_reussite' => round($tauxReussite, 2),
-                    'taux_echec' => round($tauxEchec, 2),
-                    'rang_province' => $rangCommune !== false ? $rangCommune + 1 : null,
-                    'classement_etablissements' => $classementEtablissements
-                ]
-            ]
-        ]);
     }
 
     public function evolutionCommune($id_commune)
@@ -143,15 +145,9 @@ class CommuneController extends Controller
         // Récupérer la commune
         $commune = Commune::with(['province'])->findOrFail($id_commune);
 
-        // Récupérer tous les cycles scolaires
-        $cycles = NiveauScolaire::select('cycle')
-            ->distinct()
-            ->orderBy('cycle')
-            ->pluck('cycle');
-
         // Récupérer toutes les années scolaires disponibles
         $annees = ResultatEleve::whereHas('eleve.etablissement', function($query) use ($id_commune) {
-            $query->where('id_commune', $id_commune);
+            $query->where('code_commune', $id_commune);
         })
         ->select('annee_scolaire')
         ->distinct()
@@ -159,149 +155,63 @@ class CommuneController extends Controller
         ->pluck('annee_scolaire');
 
         // Statistiques par année
-        $evolution = $annees->map(function($annee) use ($id_commune, $cycles) {
-            // Statistiques globales
-            $statsGlobales = $this->calculerStatistiquesGlobales($id_commune, $annee);
-
-            // Statistiques par cycle
-            $statsParCycle = $cycles->map(function($cycle) use ($id_commune, $annee) {
-                // Nombre d'élèves par cycle
-                $nombreEleves = Eleve::whereHas('etablissement', function($query) use ($id_commune) {
-                    $query->where('id_commune', $id_commune);
-                })
-                ->whereHas('niveau', function($query) use ($cycle) {
-                    $query->where('cycle', $cycle);
-                })
-                ->whereHas('resultats', function($query) use ($annee) {
-                    $query->where('annee_scolaire', $annee);
-                })
-                ->count();
-
-                // Moyenne générale par cycle
-                $moyenneGenerale = ResultatEleve::whereHas('eleve.etablissement', function($query) use ($id_commune) {
-                    $query->where('id_commune', $id_commune);
-                })
-                ->whereHas('eleve.niveau', function($query) use ($cycle) {
-                    $query->where('cycle', $cycle);
-                })
-                ->where('annee_scolaire', $annee)
-                ->avg('MoyenSession');
-
-                // Taux de réussite par cycle
-                $totalResultats = ResultatEleve::whereHas('eleve.etablissement', function($query) use ($id_commune) {
-                    $query->where('id_commune', $id_commune);
-                })
-                ->whereHas('eleve.niveau', function($query) use ($cycle) {
-                    $query->where('cycle', $cycle);
-                })
-                ->where('annee_scolaire', $annee)
-                ->count();
-
-                $reussis = ResultatEleve::whereHas('eleve.etablissement', function($query) use ($id_commune) {
-                    $query->where('id_commune', $id_commune);
-                })
-                ->whereHas('eleve.niveau', function($query) use ($cycle) {
-                    $query->where('cycle', $cycle);
-                })
-                ->where('annee_scolaire', $annee)
-                ->where('MoyenSession', '>=', 10)
-                ->count();
-
-                $tauxReussite = $totalResultats > 0 ? ($reussis / $totalResultats) * 100 : 0;
-                $tauxEchec = 100 - $tauxReussite;
-
-                return [
-                    'cycle' => $cycle,
-                    'nombre_eleves' => $nombreEleves,
-                    'moyenne_generale' => round($moyenneGenerale, 2),
-                    'taux_reussite' => round($tauxReussite, 2),
-                    'taux_echec' => round($tauxEchec, 2)
-                ];
-            });
-
-            return [
-                'annee_scolaire' => $annee,
-                'statistiques_globales' => $statsGlobales,
-                'statistiques_par_cycle' => $statsParCycle
-            ];
-        });
-
-        return response()->json([
-            'commune' => [
-                'id' => $commune->id_commune,
-                'nom' => $commune->nom_commune,
-                'province' => $commune->province->nom_province
-            ],
-            'evolution' => $evolution
-        ]);
-    }
-
-    private function calculerStatistiquesGlobales($id_commune, $annee)
-    {
-        // Nombre d'élèves
-        $nombreEleves = Eleve::whereHas('etablissement', function($query) use ($id_commune) {
-            $query->where('id_commune', $id_commune);
-        })
-        ->whereHas('resultats', function($query) use ($annee) {
-            $query->where('annee_scolaire', $annee);
-        })
-        ->count();
-
-        // Moyenne générale
-        $moyenneGenerale = ResultatEleve::whereHas('eleve.etablissement', function($query) use ($id_commune) {
-            $query->where('id_commune', $id_commune);
-        })
-        ->where('annee_scolaire', $annee)
-        ->avg('MoyenSession');
-
-        // Taux de réussite
-        $totalResultats = ResultatEleve::whereHas('eleve.etablissement', function($query) use ($id_commune) {
-            $query->where('id_commune', $id_commune);
-        })
-        ->where('annee_scolaire', $annee)
-        ->count();
-
-        $reussis = ResultatEleve::whereHas('eleve.etablissement', function($query) use ($id_commune) {
-            $query->where('id_commune', $id_commune);
-        })
-        ->where('annee_scolaire', $annee)
-        ->where('MoyenSession', '>=', 10)
-        ->count();
-
-        $tauxReussite = $totalResultats > 0 ? ($reussis / $totalResultats) * 100 : 0;
-        $tauxEchec = 100 - $tauxReussite;
-
-        // Nombre d'établissements
-        $nombreEtablissements = Etablissement::where('id_commune', $id_commune)
-            ->whereHas('eleves.resultats', function($query) use ($annee) {
+        $evolution = $annees->map(function($annee) use ($id_commune) {
+            // Nombre d'élèves
+            $nombreEleves = Eleve::whereHas('etablissement', function($query) use ($id_commune) {
+                $query->where('code_commune', $id_commune);
+            })
+            ->whereHas('resultats', function($query) use ($annee) {
                 $query->where('annee_scolaire', $annee);
             })
             ->count();
 
-        // Rang dans la province
-        $rangProvince = DB::table('resultat_eleves')
-            ->join('eleves', 'resultat_eleves.id_eleve', '=', 'eleves.id_eleve')
-            ->join('etablissements', 'eleves.id_etablissement', '=', 'etablissements.id_etablissement')
-            ->join('communes', 'etablissements.id_commune', '=', 'communes.id_commune')
-            ->where('communes.id_province', Commune::find($id_commune)->id_province)
-            ->where('resultat_eleves.annee_scolaire', $annee)
-            ->select('communes.id_commune', DB::raw('AVG(resultat_eleves.MoyenSession) as moyenne'))
-            ->groupBy('communes.id_commune')
-            ->orderByDesc('moyenne')
-            ->get()
-            ->search(function($item) use ($id_commune) {
-                return $item->id_commune == $id_commune;
-            });
+            // Moyenne générale
+            $moyenneGenerale = ResultatEleve::whereHas('eleve.etablissement', function($query) use ($id_commune) {
+                $query->where('code_commune', $id_commune);
+            })
+            ->where('annee_scolaire', $annee)
+            ->avg('MoyenSession');
 
-        return [
-            'nombre_eleves' => $nombreEleves,
-            'nombre_etablissements' => $nombreEtablissements,
-            'moyenne_generale' => round($moyenneGenerale, 2),
-            'taux_reussite' => round($tauxReussite, 2),
-            'taux_echec' => round($tauxEchec, 2),
-            'rang_province' => $rangProvince !== false ? $rangProvince + 1 : null
-        ];
+            // Taux de réussite et d'échec
+            $totalResultats = ResultatEleve::whereHas('eleve.etablissement', function($query) use ($id_commune) {
+                $query->where('code_commune', $id_commune);
+            })
+            ->where('annee_scolaire', $annee)
+            ->count();
+
+            $reussis = ResultatEleve::whereHas('eleve.etablissement', function($query) use ($id_commune) {
+                $query->where('code_commune', $id_commune);
+            })
+            ->where('annee_scolaire', $annee)
+            ->where('MoyenSession', '>=', 10)
+            ->count();
+
+            $tauxReussite = $totalResultats > 0 ? ($reussis / $totalResultats) * 100 : 0;
+            $tauxEchec = 100 - $tauxReussite;
+
+            return [
+                'annee_scolaire' => $annee,
+                'nombre_eleves' => $nombreEleves,
+                'moyenne_generale' => round($moyenneGenerale, 2),
+                'taux_reussite' => round($tauxReussite, 2),
+                'taux_echec' => round($tauxEchec, 2)
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'commune' => [
+                    'id' => $commune->cd_com,
+                    'nom' => $commune->la_com,
+                    'province' => $commune->province->nom_province
+                ],
+                'evolution' => $evolution
+            ]
+        ]);
     }
+
+ 
 
       /**
      * Get statistics by cycle for a specific commune
@@ -311,60 +221,66 @@ class CommuneController extends Controller
         try {
             // Get the active academic year if none is provided
             if (!$annee_scolaire) {
-                $anneeScolaire = AnneeScolaire::where('active', true)->first();
+                $anneeScolaire = AnneeScolaire::where('est_courante', true)->first();
                 if ($anneeScolaire) {
-                    $annee_scolaire = $anneeScolaire->annee;
+                    $annee_scolaire = $anneeScolaire->annee_scolaire;
                 }
             }
 
-            \Log::info('Recherche des statistiques pour la commune: ' . $id_commune);
-            \Log::info('Année scolaire: ' . $annee_scolaire);
+            // Get all cycles in the commune
+            $cycles = Etablissement::where('code_commune', $id_commune)
+                ->distinct('cycle')
+                ->pluck('cycle');
 
-            // Get statistics by cycle using Eloquent
-            $resultats = Etablissement::with(['eleves.resultats'])
-            ->whereHas('commune', function($q) use ($id_commune) {
-                $q->where('cd_com', $id_commune);
-            })
-            ->whereHas('eleves', function($q) use ($annee_scolaire) {
-                $q->whereHas('resultats', function($r) use ($annee_scolaire) {
-                    $r->where('annee_scolaire', $annee_scolaire);
-                });
-            })
-            ->get()
-            ->groupBy('cycle')
-            ->map(function($group) use ($annee_scolaire) {
-                $nombreEleves = 0;
-                $sommeMoyennes = 0;
-                $nombreMoyennes = 0;
-                $nombreReussis = 0;
+            // Get statistics by cycle
+            $resultats = $cycles->map(function($cycle) use ($id_commune, $annee_scolaire) {
+                $nombreEleves = ResultatEleve::join('eleve', 'resultat_eleve.code_eleve', '=', 'eleve.code_eleve')
+                    ->join('etablissement', 'eleve.code_etab', '=', 'etablissement.code_etab')
+                    ->where('etablissement.code_commune', $id_commune)
+                    ->where('etablissement.cycle', $cycle)
+                    ->when($annee_scolaire, function($query) use ($annee_scolaire) {
+                        $query->where('resultat_eleve.annee_scolaire', $annee_scolaire);
+                    })
+                    ->distinct()
+                    ->count('eleve.code_eleve');
 
-                foreach ($group as $etablissement) {
-                    foreach ($etablissement->eleves as $eleve) {
-                        foreach ($eleve->resultats as $resultat) {
-                            if ($resultat->annee_scolaire == $annee_scolaire) {
-                                $nombreEleves++;
-                                $sommeMoyennes += $resultat->MoyenSession;
-                                $nombreMoyennes++;
-                                if ($resultat->MoyenSession >= 10) {
-                                    $nombreReussis++;
-                                }
-                            }
-                        }
-                    }
-                }
+                $moyenneGenerale = ResultatEleve::join('eleve', 'resultat_eleve.code_eleve', '=', 'eleve.code_eleve')
+                    ->join('etablissement', 'eleve.code_etab', '=', 'etablissement.code_etab')
+                    ->where('etablissement.code_commune', $id_commune)
+                    ->where('etablissement.cycle', $cycle)
+                    ->when($annee_scolaire, function($query) use ($annee_scolaire) {
+                        $query->where('resultat_eleve.annee_scolaire', $annee_scolaire);
+                    })
+                    ->avg('resultat_eleve.MoyenSession') ?? 0;
 
-                $moyenneGenerale = $nombreMoyennes > 0 ? $sommeMoyennes / $nombreMoyennes : 0;
-                $tauxReussite = $nombreEleves > 0 ? ($nombreReussis / $nombreEleves) * 100 : 0;
+                $totalResultats = ResultatEleve::join('eleve', 'resultat_eleve.code_eleve', '=', 'eleve.code_eleve')
+                    ->join('etablissement', 'eleve.code_etab', '=', 'etablissement.code_etab')
+                    ->where('etablissement.code_commune', $id_commune)
+                    ->where('etablissement.cycle', $cycle)
+                    ->when($annee_scolaire, function($query) use ($annee_scolaire) {
+                        $query->where('resultat_eleve.annee_scolaire', $annee_scolaire);
+                    })
+                    ->count();
+
+                $reussis = ResultatEleve::join('eleve', 'resultat_eleve.code_eleve', '=', 'eleve.code_eleve')
+                    ->join('etablissement', 'eleve.code_etab', '=', 'etablissement.code_etab')
+                    ->where('etablissement.code_commune', $id_commune)
+                    ->where('etablissement.cycle', $cycle)
+                    ->when($annee_scolaire, function($query) use ($annee_scolaire) {
+                        $query->where('resultat_eleve.annee_scolaire', $annee_scolaire);
+                    })
+                    ->where('resultat_eleve.MoyenSession', '>=', 10)
+                    ->count();
+
+                $tauxReussite = $totalResultats > 0 ? ($reussis / $totalResultats) * 100 : 0;
 
                 return [
-                    'cycle' => $group[0]->cycle,
+                    'cycle' => $cycle,
                     'nombre_eleves' => $nombreEleves,
                     'moyenne_generale' => round($moyenneGenerale, 2),
                     'taux_reussite' => round($tauxReussite, 2)
                 ];
             });
-
-            \Log::info('Résultats trouvés: ' . json_encode($resultats));
 
             return response()->json([
                 'success' => true,

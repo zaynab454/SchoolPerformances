@@ -14,8 +14,15 @@ class Matiere extends Model
     protected $primaryKey = 'id_matiere';
 
     protected $fillable = [
-        'nom_matiere_ar'
+        'nom_matiere_ar',
+        'code_niveau',
+        'nom_colonne'
     ];
+
+    public function niveau()
+    {
+        return $this->belongsTo(NiveauScolaire::class, 'code_niveau', 'code_niveau');
+    }
 
     public function resultats()
     {

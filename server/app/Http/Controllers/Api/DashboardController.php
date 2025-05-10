@@ -156,14 +156,14 @@ class DashboardController extends Controller
                 }
 
                 $moyenneGenerale = $nombreMoyennes > 0 ? $sommeMoyennes / $nombreMoyennes : 0;
-                $tauxReussite = $nombreEleves > 0 ? ($nombreReussis / $nombreEleves) * 100 : 0;
+            $tauxReussite = $nombreEleves > 0 ? ($nombreReussis / $nombreEleves) * 100 : 0;
 
                 $statistiques[] = [
                     'annee_scolaire' => $annee->annee_scolaire,
-                    'nombre_eleves' => $nombreEleves,
-                    'moyenne_generale' => round($moyenneGenerale, 2),
-                    'taux_reussite' => round($tauxReussite, 2)
-                ];
+                'nombre_eleves' => $nombreEleves,
+                'moyenne_generale' => round($moyenneGenerale, 2),
+                'taux_reussite' => round($tauxReussite, 2)
+            ];
             }
 
             // Charger le nom de la province
@@ -175,8 +175,8 @@ class DashboardController extends Controller
                 ], 404);
             }
 
-            return response()->json([
-                'success' => true,
+        return response()->json([
+            'success' => true,
                 'data' => [
                     'province' => $province->nom_province,
                     'statistiques' => $statistiques
@@ -312,19 +312,19 @@ class DashboardController extends Controller
                 $moyenneGenerale = $nombreMoyennes > 0 ? $sommeMoyennes / $nombreMoyennes : 0;
                 $tauxReussite = $nombreEleves > 0 ? ($nombreReussis / $nombreEleves) * 100 : 0;
 
-                return [
+            return [
                     'cycle' => $group[0]->cycle,
-                    'nombre_eleves' => $nombreEleves,
+                'nombre_eleves' => $nombreEleves,
                     'moyenne_generale' => round($moyenneGenerale, 2),
                     'taux_reussite' => round($tauxReussite, 2)
-                ];
-            });
+            ];
+        });
 
             // Convertir en tableau pour une meilleure lisibilité
             $resultatsArray = $resultats->values()->toArray();
 
-            return response()->json([
-                'success' => true,
+        return response()->json([
+            'success' => true,
                 'data' => $resultatsArray
             ]);
         } catch (\Exception $e) {
@@ -379,14 +379,14 @@ class DashboardController extends Controller
             $moyenneGenerale = $nombreMoyennes > 0 ? $sommeMoyennes / $nombreMoyennes : 0;
             $tauxReussite = $nombreEleves > 0 ? ($nombreReussis / $nombreEleves) * 100 : 0;
 
-            return [
-                'commune' => $commune->nom_commune,
-                'nombre_eleves' => $nombreEleves,
-                'moyenne_generale' => round($moyenneGenerale, 2),
-                'taux_reussite' => round($tauxReussite, 2),
+                return [
+                    'commune' => $commune->nom_commune,
+                    'nombre_eleves' => $nombreEleves,
+                    'moyenne_generale' => round($moyenneGenerale, 2),
+                    'taux_reussite' => round($tauxReussite, 2),
                 'rang' => null
-            ];
-        });
+                ];
+            });
 
         // Trier les communes par moyenne générale (descendant)
         $communes = $communes->sortByDesc('moyenne_generale');

@@ -12,6 +12,7 @@ class NiveauScolaire extends Model
 
     protected $table = 'niveau_scolaire';
     protected $primaryKey = 'code_niveau';
+    public $incrementing = false;
 
     protected $fillable = [
         'description'
@@ -20,5 +21,10 @@ class NiveauScolaire extends Model
     public function eleves()
     {
         return $this->hasMany(Eleve::class, 'code_niveau');
+    }
+
+    public function matieres()
+    {
+        return $this->hasMany(Matiere::class, 'code_niveau');
     }
 }

@@ -18,7 +18,7 @@ Route::prefix('auth')->group(function () {
     Route::get('/profile', [AuthController::class, 'profile']);
 });
 
-// Routes API pour les statistiques
+// Routes API pour les statistiques province
 Route::prefix('province')->group(function () {
     Route::get('/stats{annee_scolaire?}', [DashboardController::class, 'statsProvince']);
     Route::get('/evolution', [DashboardController::class, 'evolutionProvince']);
@@ -43,8 +43,8 @@ Route::prefix('commune')->group(function () {
 // Routes API pour les établissements
 Route::prefix('etablissement')->group(function () {
     Route::get('/{id_etablissement}/stats/{annee_scolaire?}', [EtablissementController::class, 'statEtablissement']);
-    Route::get('/{id_etablissement}/niveaux/{annee_scolaire?}/{id_niveau?}', [EtablissementController::class, 'statNiveau']);
-    Route::get('/{id_etablissement}/matieres/{id_niveau}/{annee_scolaire?}', [EtablissementController::class, 'statMatiere']);
+    Route::get('/{id_etablissement}/niveaux/{annee_scolaire?}/{code_niveau?}', [EtablissementController::class, 'statNiveau']);
+    Route::get('/{id_etablissement}/matieres/{code_niveau}/{annee_scolaire?}', [EtablissementController::class, 'statMatiere']);
     Route::get('/{id_etablissement}/evolution', [EtablissementController::class, 'evaluationAnnuelle']);
 });
 

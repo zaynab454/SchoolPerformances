@@ -28,6 +28,6 @@ class Commune extends Model
 
     public function etablissements()
     {
-        return $this->hasMany(Etablissement::class, 'code_commune');
+        return $this->hasMany(Etablissement::class, 'code_commune', 'cd_com');
     }
 }
