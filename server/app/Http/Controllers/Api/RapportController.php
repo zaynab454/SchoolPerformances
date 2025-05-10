@@ -20,7 +20,7 @@ class RapportController extends Controller
         $etablissement = Etablissement::with(['commune.province'])->findOrFail($id_etablissement);
 
         // Statistiques générales
-        $nombreEleves = Eleve::where('id_etablissement', $id_etablissement)
+        $nombreEleves = Eleve::where('code_etab', $id_etablissement)
             ->when($annee_scolaire, function($query) use ($annee_scolaire) {
                 $query->whereHas('resultats', function($q) use ($annee_scolaire) {
                     $q->where('annee_scolaire', $annee_scolaire);
@@ -29,7 +29,7 @@ class RapportController extends Controller
             ->count();
 
         $moyenneGenerale = ResultatEleve::whereHas('eleve', function($query) use ($id_etablissement) {
-            $query->where('id_etablissement', $id_etablissement);
+            $query->where('code_etab', $id_etablissement);
         })
         ->when($annee_scolaire, function($query) use ($annee_scolaire) {
             $query->where('annee_scolaire', $annee_scolaire);
@@ -37,7 +37,7 @@ class RapportController extends Controller
         ->avg('MoyenSession');
 
         $totalResultats = ResultatEleve::whereHas('eleve', function($query) use ($id_etablissement) {
-            $query->where('id_etablissement', $id_etablissement);
+            $query->where('code_etab', $id_etablissement);
         })
         ->when($annee_scolaire, function($query) use ($annee_scolaire) {
             $query->where('annee_scolaire', $annee_scolaire);
@@ -45,7 +45,7 @@ class RapportController extends Controller
         ->count();
 
         $reussis = ResultatEleve::whereHas('eleve', function($query) use ($id_etablissement) {
-            $query->where('id_etablissement', $id_etablissement);
+            $query->where('code_etab', $id_etablissement);
         })
         ->when($annee_scolaire, function($query) use ($annee_scolaire) {
             $query->where('annee_scolaire', $annee_scolaire);
@@ -56,11 +56,16 @@ class RapportController extends Controller
         $tauxReussite = $totalResultats > 0 ? ($reussis / $totalResultats) * 100 : 0;
 
         // Statistiques par niveau
-        $niveaux = NiveauScolaire::all();
+        $niveaux = NiveauScolaire::with(['eleves' => function($query) use ($id_etablissement) {
+                $query->where('code_etab', $id_etablissement);
+            }, 'matieres'])->get();
+        $niveaux = $niveaux->filter(function($niveau) {
+            return $niveau->eleves->isNotEmpty();
+        });
         $statistiquesNiveaux = $niveaux->map(function($niveau) use ($id_etablissement, $annee_scolaire) {
             $moyenneNiveau = ResultatEleve::whereHas('eleve', function($query) use ($id_etablissement, $niveau) {
-                $query->where('id_etablissement', $id_etablissement)
-                    ->where('id_niveau', $niveau->id_niveau);
+                $query->where('code_etab', $id_etablissement)
+                    ->where('code_niveau', $niveau->code_niveau);
             })
             ->when($annee_scolaire, function($query) use ($annee_scolaire) {
                 $query->where('annee_scolaire', $annee_scolaire);
@@ -68,8 +73,8 @@ class RapportController extends Controller
             ->avg('MoyenSession');
 
             $totalResultatsNiveau = ResultatEleve::whereHas('eleve', function($query) use ($id_etablissement, $niveau) {
-                $query->where('id_etablissement', $id_etablissement)
-                    ->where('id_niveau', $niveau->id_niveau);
+                $query->where('code_etab', $id_etablissement)
+                    ->where('code_niveau', $niveau->code_niveau);
             })
             ->when($annee_scolaire, function($query) use ($annee_scolaire) {
                 $query->where('annee_scolaire', $annee_scolaire);
@@ -77,8 +82,8 @@ class RapportController extends Controller
             ->count();
 
             $reussisNiveau = ResultatEleve::whereHas('eleve', function($query) use ($id_etablissement, $niveau) {
-                $query->where('id_etablissement', $id_etablissement)
-                    ->where('id_niveau', $niveau->id_niveau);
+                $query->where('code_etab', $id_etablissement)
+                    ->where('code_niveau', $niveau->code_niveau);
             })
             ->when($annee_scolaire, function($query) use ($annee_scolaire) {
                 $query->where('annee_scolaire', $annee_scolaire);
@@ -89,17 +94,22 @@ class RapportController extends Controller
             $tauxReussiteNiveau = $totalResultatsNiveau > 0 ? ($reussisNiveau / $totalResultatsNiveau) * 100 : 0;
 
             return [
-                'niveau' => $niveau->nom_niveau,
+                'niveau' => $niveau,
                 'moyenne' => round($moyenneNiveau, 2),
                 'taux_reussite' => round($tauxReussiteNiveau, 2)
             ];
-        });
+        })->values();
 
         // Statistiques par matière
-        $matieres = Matiere::all();
+        $matieres = Matiere::with(['eleves' => function($query) use ($id_etablissement) {
+                $query->where('code_etab', $id_etablissement);
+            }, 'niveau'])->get();
+        $matieres = $matieres->filter(function($matiere) {
+            return $matiere->eleves->isNotEmpty();
+        });
         $statistiquesMatieres = $matieres->map(function($matiere) use ($id_etablissement, $annee_scolaire) {
             $moyenneMatiere = ResultatEleve::whereHas('eleve', function($query) use ($id_etablissement) {
-                $query->where('id_etablissement', $id_etablissement);
+                $query->where('code_etab', $id_etablissement);
             })
             ->when($annee_scolaire, function($query) use ($annee_scolaire) {
                 $query->where('annee_scolaire', $annee_scolaire);
@@ -135,7 +145,7 @@ class RapportController extends Controller
 
         // Statistiques générales
         $nombreEleves = Eleve::whereHas('etablissement', function($query) use ($id_commune) {
-            $query->where('id_commune', $id_commune);
+            $query->where('code_commune', $id_commune);
         })
         ->when($annee_scolaire, function($query) use ($annee_scolaire) {
             $query->whereHas('resultats', function($q) use ($annee_scolaire) {
@@ -145,7 +155,7 @@ class RapportController extends Controller
         ->count();
 
         $moyenneGenerale = ResultatEleve::whereHas('eleve.etablissement', function($query) use ($id_commune) {
-            $query->where('id_commune', $id_commune);
+            $query->where('code_commune', $id_commune);
         })
         ->when($annee_scolaire, function($query) use ($annee_scolaire) {
             $query->where('annee_scolaire', $annee_scolaire);
@@ -153,7 +163,7 @@ class RapportController extends Controller
         ->avg('MoyenSession');
 
         $totalResultats = ResultatEleve::whereHas('eleve.etablissement', function($query) use ($id_commune) {
-            $query->where('id_commune', $id_commune);
+            $query->where('code_commune', $id_commune);
         })
         ->when($annee_scolaire, function($query) use ($annee_scolaire) {
             $query->where('annee_scolaire', $annee_scolaire);
@@ -161,7 +171,7 @@ class RapportController extends Controller
         ->count();
 
         $reussis = ResultatEleve::whereHas('eleve.etablissement', function($query) use ($id_commune) {
-            $query->where('id_commune', $id_commune);
+            $query->where('code_commune', $id_commune);
         })
         ->when($annee_scolaire, function($query) use ($annee_scolaire) {
             $query->where('annee_scolaire', $annee_scolaire);
@@ -172,10 +182,17 @@ class RapportController extends Controller
         $tauxReussite = $totalResultats > 0 ? ($reussis / $totalResultats) * 100 : 0;
 
         // Statistiques par établissement
-        $etablissements = Etablissement::where('id_commune', $id_commune)->get();
+        $etablissements = Etablissement::with(['eleves' => function($query) use ($id_commune) {
+                $query->whereHas('etablissement', function($q) use ($id_commune) {
+                    $q->where('code_commune', $id_commune);
+                });
+            }])->get();
+        $etablissements = $etablissements->filter(function($etablissement) {
+            return $etablissement->eleves->isNotEmpty();
+        });
         $statistiquesEtablissements = $etablissements->map(function($etablissement) use ($annee_scolaire) {
             $moyenneEtablissement = ResultatEleve::whereHas('eleve', function($query) use ($etablissement) {
-                $query->where('id_etablissement', $etablissement->id_etablissement);
+                $query->where('code_etab', $etablissement->code_etab);
             })
             ->when($annee_scolaire, function($query) use ($annee_scolaire) {
                 $query->where('annee_scolaire', $annee_scolaire);
@@ -183,7 +200,7 @@ class RapportController extends Controller
             ->avg('MoyenSession');
 
             $totalResultatsEtablissement = ResultatEleve::whereHas('eleve', function($query) use ($etablissement) {
-                $query->where('id_etablissement', $etablissement->id_etablissement);
+                $query->where('code_etab', $etablissement->code_etab);
             })
             ->when($annee_scolaire, function($query) use ($annee_scolaire) {
                 $query->where('annee_scolaire', $annee_scolaire);
@@ -191,7 +208,7 @@ class RapportController extends Controller
             ->count();
 
             $reussisEtablissement = ResultatEleve::whereHas('eleve', function($query) use ($etablissement) {
-                $query->where('id_etablissement', $etablissement->id_etablissement);
+                $query->where('code_etab', $etablissement->code_etab);
             })
             ->when($annee_scolaire, function($query) use ($annee_scolaire) {
                 $query->where('annee_scolaire', $annee_scolaire);
@@ -270,7 +287,7 @@ class RapportController extends Controller
         $communes = Commune::where('id_province', $id_province)->get();
         $statistiquesCommunes = $communes->map(function($commune) use ($annee_scolaire) {
             $moyenneCommune = ResultatEleve::whereHas('eleve.etablissement', function($query) use ($commune) {
-                $query->where('id_commune', $commune->id_commune);
+                $query->where('code_commune', $commune->cd_com);
             })
             ->when($annee_scolaire, function($query) use ($annee_scolaire) {
                 $query->where('annee_scolaire', $annee_scolaire);
@@ -278,7 +295,7 @@ class RapportController extends Controller
             ->avg('MoyenSession');
 
             $totalResultatsCommune = ResultatEleve::whereHas('eleve.etablissement', function($query) use ($commune) {
-                $query->where('id_commune', $commune->id_commune);
+                $query->where('code_commune', $commune->cd_com);
             })
             ->when($annee_scolaire, function($query) use ($annee_scolaire) {
                 $query->where('annee_scolaire', $annee_scolaire);
@@ -286,7 +303,7 @@ class RapportController extends Controller
             ->count();
 
             $reussisCommune = ResultatEleve::whereHas('eleve.etablissement', function($query) use ($commune) {
-                $query->where('id_commune', $commune->id_commune);
+                $query->where('code_commune', $commune->cd_com);
             })
             ->when($annee_scolaire, function($query) use ($annee_scolaire) {
                 $query->where('annee_scolaire', $annee_scolaire);
@@ -297,7 +314,10 @@ class RapportController extends Controller
             $tauxReussiteCommune = $totalResultatsCommune > 0 ? ($reussisCommune / $totalResultatsCommune) * 100 : 0;
 
             return [
-                'commune' => $commune->nom_commune,
+                'commune' => [
+                    'nom' => $commune->ll_com,
+                    'code' => $commune->cd_com
+                ],
                 'moyenne' => round($moyenneCommune, 2),
                 'taux_reussite' => round($tauxReussiteCommune, 2)
             ];

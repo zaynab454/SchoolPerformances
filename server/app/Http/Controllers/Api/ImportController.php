@@ -186,43 +186,46 @@ class ImportController extends Controller
     private function processRow($row, &$imported, $anneeScolaire)
     {
         // Validation des données requises
-        $requiredFields = ['CD_ETAB', 'NOM_ETABA', 'la_com', 'codeEleve', 'nomEleveAr', 'prenomEleveAr', 'Suffix'];
+        $requiredFields = ['code_etab', 'nom_etab_fr', 'nom_etab_ar', 'code_commune', 'code_niveau', 'nom_eleve_ar', 'prenom_eleve_ar', 'MoyenSession'];
         foreach ($requiredFields as $field) {
             if (!isset($row[$field]) || empty($row[$field])) {
                 throw new \Exception("Le champ $field est requis");
             }
         }
 
-        // Créer ou récupérer la commune
-        $commune = Commune::firstOrCreate(
-            ['la_com' => $row['la_com']],
-            [
-                'll_com' => $row['la_com'],
-                'cd_com' => 'COM_' . str_pad($imported + 1, 4, '0', STR_PAD_LEFT),
-                'id_province' => 'PROV_0001'
-            ]
-        );
+        // Créer ou récupérer la commune avec un code unique
+        $codeCommune = uniqid('COM_');
+        $commune = Commune::firstOrCreate([
+            'cd_com' => $codeCommune
+        ], [
+            'la_com' => $row['nom_commune_ar'],
+            'll_com' => $row['الاسم_الفرنسي'],
+            'id_province' => $row['id_province']
+        ]);
 
         // Créer ou récupérer l'établissement
-        $etablissement = Etablissement::firstOrCreate(
-            ['code_etab' => $row['CD_ETAB']],
-            [
-                'nom_etab_fr' => $row['NOM_ETABA'],
-                'code_commune' => $commune->cd_com
-            ]
-        );
-    
+        $etablissement = Etablissement::firstOrCreate([
+            'code_etab' => $row['code_etab']
+        ], [
+            'nom_etab_fr' => $row['nom_etab_fr'],
+            'nom_etab_ar' => $row['nom_etab_ar'],
+            'code_commune' => $commune->cd_com,
+            'cycle' => $row['cycle']
+        ]);
+
+        // Générer un code élève unique
+        $codeEleve = uniqid('ELE_');
+
         // Créer ou récupérer l'élève
-        $eleve = Eleve::firstOrCreate(
-            ['code_eleve' => $row['codeEleve']],
-            [
-                'nom_eleve_ar' => $row['nomEleveAr'],
-                'prenom_eleve_ar' => $row['prenomEleveAr'],
-                'code_etab' => $etablissement->code_etab,
-                'code_niveau' => $row['Suffix']
-            ]
-        );
-    
+        $eleve = Eleve::firstOrCreate([
+            'code_eleve' => $codeEleve
+        ], [
+            'nom_eleve_ar' => $row['nom_eleve_ar'],
+            'prenom_eleve_ar' => $row['prenom_eleve_ar'],
+            'code_etab' => $etablissement->code_etab,
+            'code_niveau' => $row['code_niveau']
+        ]);
+
         // Créer ou mettre à jour le résultat pour l'année scolaire spécifiée
         ResultatEleve::updateOrCreate(
             [
@@ -230,14 +233,10 @@ class ImportController extends Controller
                 'annee_scolaire' => $anneeScolaire->annee_scolaire
             ],
             [
-                'MoyenNoteCC' => $row['MoyenneNoteCC_Note'] ?? 0,
-                'MoyenExamenNote' => $row['NoteExamen_Note'] ?? 0,
-                'MoyenCC' => $row['MoynneCC'] ?? 0,
-                'MoyenExam' => $row['MoyenneExam'] ?? 0,
-                'MoyenSession' => $row['MoyenneSession'] ?? 0
+                'MoyenSession' => $row['MoyenSession']
             ]
         );
-    
+
         $imported++;
     }
 }

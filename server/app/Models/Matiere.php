@@ -28,4 +28,9 @@ class Matiere extends Model
     {
         return $this->hasMany(ResultatEleve::class, 'id_matiere');
     }
+
+    public function eleves()
+    {
+        return $this->belongsToMany(Eleve::class, 'resultat_eleve', 'id_matiere', 'code_eleve');
+    }
 }
