@@ -1,13 +1,23 @@
 .sidebar {
-    width: 80px;
-    min-height: 100vh;
-    background: #2C2962;
-    color: white;
     position: fixed;
     top: 0;
+    left: 0;
+    height: 100vh;
+    background: var(--primary-color);
+    color: white;
+    transition: width 0.3s ease;
     z-index: 1000;
-    overflow: hidden;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+    overflow-x: hidden;
+    width: 250px;
+}
+
+.sidebar.open {
+    width: 250px;
+}
+
+.sidebar:not(.open) {
+    width: 80px;
 }
 
 [dir="ltr"] .sidebar {
@@ -37,7 +47,7 @@
 
     .sidebar.open {
         left: 0;
-        box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.34);
     }
 }
 
@@ -61,12 +71,12 @@
     }
 
     .logo {
-        height: 80px;
-        padding: 15px;
+        height: 20px;
+        padding: 2px;
     }
 
     .logo-image {
-        height: 70px;
+        height: 20px;
     }
 
     .menu-toggle {
@@ -78,6 +88,11 @@
 @media (min-width: 769px) {
     .sidebar {
         width: 80px;
+        background: rgba(44, 41, 98, 0.5); /* Couleur primaire avec transparence */
+    }
+
+    .sidebar.open {
+        background: var(--primary-color);
     }
 
     .menu-item {
@@ -85,8 +100,7 @@
     }
 
     .icon-container {
-        width: 24px;
-        height: 24px;
+        padding: 12px 15px;
     }
 
     .menu-label {
@@ -94,12 +108,12 @@
     }
 
     .logo {
-        height: 80px;
-        padding: 15px;
+        height: 20px;
+        padding: 2px;
     }
 
     .logo-image {
-        height: 60px;
+        height: 20px;
     }
 
     .menu-toggle {
@@ -193,18 +207,20 @@
 }
 
 .logo {
-    height: 150px;
+    height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: #2C2962;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 4px;
 }
 
 .logo-image {
-    height: 150px;
+    height: 20px;
     width: auto;
     object-fit: contain;
+    margin-right: 4px;
 }
 
 
@@ -222,6 +238,35 @@
     transition: all 0.3s ease;
     font-size: 1.1rem;
     gap: 10px;
+    position: relative;
+    width: 100%;
+}
+
+.logout-section {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    padding: 15px;
+    box-sizing: border-box;
+}
+
+.logout-button {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 12px 15px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-size: 1.1rem;
+    gap: 10px;
+}
+
+.logout-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 [dir="ltr"] .menu-item {
@@ -230,7 +275,7 @@
 }
 
 [dir="rtl"] .menu-item {
-    flex-direction: row-reverse;
+    flex-direction: row;
     padding: 12px 15px;
 }
 
@@ -241,90 +286,9 @@
     width: 24px;
     height: 24px;
     position: relative;
-    order: 1;
-    transition: all 0.3s ease;
-}
-
-[dir="ltr"] .icon-container {
-    margin-right: 8px;
-}
-
-[dir="rtl"] .icon-container {
-    margin-left: 8px;
-}
-
-.menu-label {
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
     order: 2;
     transition: all 0.3s ease;
-}
-
-[dir="ltr"] .menu-label {
     margin-left: 8px;
-}
-
-[dir="rtl"] .menu-label {
-    margin-right: 8px;
-}
-
-.menu-item {
-    display: flex;
-    align-items: center;
-    padding: 12px 15px;
-    color: #ffffff;
-    text-decoration: none;
-    transition: all 0.3s ease;
-    font-size: 1.1rem;
-    gap: 10px;
-    position: relative;
-}
-
-[dir="ltr"] .menu-item {
-    flex-direction: row;
-    padding: 12px 15px;
-}
-
-[dir="rtl"] .menu-item {
-    flex-direction: row-reverse;
-    padding: 12px 15px;
-}
-
-.menu-item {
-    display: flex;
-    align-items: center;
-    padding: 12px 15px;
-    color: #ffffff;
-    text-decoration: none;
-    transition: all 0.3s ease;
-    font-size: 1.1rem;
-    gap: 10px;
-    position: relative;
-}
-
-[dir="ltr"] .menu-item {
-    flex-direction: row;
-    padding: 12px 15px;
-}
-
-[dir="rtl"] .menu-item {
-    flex-direction: row-reverse;
-    padding: 12px 15px;
-}
-
-.icon-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    position: relative;
-}
-
-.icon-container svg {
-    width: 20px;
     height: 20px;
     color: #ffffff !important;
 }

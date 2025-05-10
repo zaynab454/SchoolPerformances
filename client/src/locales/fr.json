@@ -1,0 +1,36 @@
+{
+    "common": {
+        "direction": "ltr",
+        "dashboard": "Tableau de bord",
+        "analyseCommune": "Analyse commune",
+        "analyseEtablissement": "Analyse établissement",
+        "importDonnees": "Import données",
+        "rapports": "Rapports",
+        "parametres": "Paramètres",
+        "deconnexion": "Déconnexion",
+        "notifications": "Notifications",
+        "profil": "Profil",
+        "modeSombre": "Mode sombre",
+        "pleinEcran": "Plein écran"
+    },
+    "dashboard": {
+        "title": "Tableau de bord",
+        "welcome": "Bienvenue",
+        "stats": "Statistiques"
+    },
+    "analyse": {
+        "title": "Analyse",
+        "common": "Analyse commune",
+        "etablissement": "Analyse établissement"
+    },
+    "import": {
+        "title": "Importation de données",
+        "instructions": "Instructions d'importation"
+    },
+    "parametres": {
+        "title": "Paramètres",
+        "general": "Général",
+        "notifications": "Notifications",
+        "sécurité": "Sécurité"
+    }
+}

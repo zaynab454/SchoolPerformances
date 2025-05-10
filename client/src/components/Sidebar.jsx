@@ -1,17 +1,19 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaHome, FaSchool, FaChartLine, FaFileImport, FaCog, FaUser, FaSignOutAlt } from 'react-icons/fa';
-import { LanguageContext } from '../contexts/LanguageContext';
+import { FaHome, FaSchool, FaChartLine, FaFileImport, FaCog, FaUser, FaSignOutAlt, FaChartBar, FaFileAlt } from 'react-icons/fa';
+import { useTranslation } from '../hooks/useTranslation';
 import './Sidebar.css';
 
 const Sidebar = () => {
     const [isOpen, setIsOpen] = useState(false);
-    const { language, direction } = useContext(LanguageContext);
+    const { t, translations } = useTranslation();
+    const direction = translations.common?.direction || 'ltr';
 
     useEffect(() => {
         const handleResize = () => {
             if (window.innerWidth > 768) {
                 setIsOpen(false);
+                document.documentElement.style.setProperty('--sidebar-width', '80px');
             }
         };
 
@@ -20,67 +22,52 @@ const Sidebar = () => {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
+    useEffect(() => {
+        if (isOpen) {
+            document.documentElement.style.setProperty('--sidebar-width', '250px');
+        } else {
+            document.documentElement.style.setProperty('--sidebar-width', '80px');
+        }
+    }, [isOpen]);
+
     const menuItems = [
         {
             path: '/dashboard',
-            icon: <FaHome />,
-            label: {
-                fr: 'Tableau de bord',
-                en: 'Dashboard',
-                ar: 'لوحة التحكم'
-            }
+            icon: translations.icons?.dashboard === 'FaChartBar' ? <FaChartBar /> : <FaHome />,
+            label: 'common.dashboard'
         },
         {
             path: '/analyse-commune',
-            icon: <FaSchool />,
-            label: {
-                fr: 'Analyse commune',
-                en: 'Common Analysis',
-                ar: 'تحليل عام'
-            }
+            icon: translations.icons?.analyseCommune === 'FaChartBar' ? <FaChartBar /> : <FaChartLine />,
+            label: 'analyse.common'
         },
         {
             path: '/analyse-etablissement',
-            icon: <FaChartLine />,
-            label: {
-                fr: 'Analyse établissement',
-                en: 'School Analysis',
-                ar: 'تحليل المؤسسة'
-            }
+            icon: translations.icons?.analyseEtablissement === 'FaSchool' ? <FaSchool /> : <FaChartLine />,
+            label: 'analyse.etablissement'
         },
         {
             path: '/import-donnees',
-            icon: <FaFileImport />,
-            label: {
-                fr: 'Import données',
-                en: 'Import Data',
-                ar: 'استيراد البيانات'
-            }
+            icon: translations.icons?.importDonnees === 'FaFileImport' ? <FaFileImport /> : <FaFileImport />,
+            label: 'import.title'
         },
         {
             path: '/rapports',
-            icon: <FaFileImport />,
-            label: {
-                fr: 'Rapports',
-                en: 'Reports',
-                ar: 'التقارير'
-            }
+            icon: translations.icons?.rapports === 'FaFileAlt' ? <FaFileAlt /> : <FaFileImport />,
+            label: 'common.rapports'
         },
         {
             path: '/parametres',
-            icon: <FaCog />,
-            label: {
-                fr: 'Paramètres',
-                en: 'Settings',
-                ar: 'الإعدادات'
-            }
+            icon: translations.icons?.parametres === 'FaCog' ? <FaCog /> : <FaCog />,
+            label: 'common.parametres'
         }
     ];
 
     return (
         <div className={`sidebar ${isOpen ? 'open' : ''}`} dir={direction}>
-            <div className="logo">
-                <img src="/logo.png" alt="SchoolPerf" className="logo-image" />
+            <div className="logo" onClick={() => setIsOpen(!isOpen)}>
+                <img src="/logo.png" alt="Logo" />
+                <span>{t('common.logo')}</span>
             </div>
             
             <div className="menu-toggle" onClick={() => setIsOpen(!isOpen)}>
@@ -95,16 +82,25 @@ const Sidebar = () => {
                         <div className="icon-container">
                             {item.icon}
                         </div>
-                        <span className="menu-label">{item.label[language]}</span>
+                        <span className="menu-label">{t(item.label)}</span>
                     </Link>
                 ))}
 
-                <Link to="/logout" className="menu-item logout">
-                    <div className="icon-container">
-                        <FaSignOutAlt />
-                    </div>
-                    <span className="menu-label">Déconnexion</span>
-                </Link>
+                <div className="logout-section">
+                    <button 
+                        onClick={() => {
+                            localStorage.removeItem('token');
+                            localStorage.removeItem('user');
+                            window.location.href = '/login';
+                        }} 
+                        className="menu-item logout-button"
+                    >
+                        <div className="icon-container">
+                            <FaSignOutAlt />
+                        </div>
+                        <span className="menu-label">{t('common.deconnexion')}</span>
+                    </button>
+                </div>
             </nav>
         </div>
     );

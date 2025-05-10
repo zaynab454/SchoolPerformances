@@ -1,0 +1,44 @@
+{
+    "common": {
+        "direction": "rtl",
+        "dashboard": "لوحة التحكم",
+        "analyseCommune": "تحليل عام",
+        "analyseEtablissement": "تحليل المؤسسة",
+        "importDonnees": "استيراد البيانات",
+        "rapports": "التقارير",
+        "parametres": "الإعدادات",
+        "deconnexion": "تسجيل الخروج",
+        "notifications": "الإشعارات",
+        "profil": "الملف الشخصي",
+        "modeSombre": "الوضع الداكن",
+        "pleinEcran": "الشاشة الكاملة"
+    },
+    "dashboard": {
+        "title": "لوحة التحكم",
+        "welcome": "مرحباً",
+        "stats": "الإحصائيات"
+    },
+    "analyse": {
+        "title": "التحليل",
+        "common": "تحليل عام",
+        "etablissement": "تحليل المؤسسة"
+    },
+    "import": {
+        "title": "استيراد البيانات",
+        "instructions": "تعليمات الاستيراد"
+    },
+    "parametres": {
+        "title": "الإعدادات",
+        "general": "عام",
+        "notifications": "الإشعارات",
+        "security": "الأمان"
+    },
+    "icons": {
+        "dashboard": "FaHome",
+        "analyseCommune": "FaChartBar",
+        "analyseEtablissement": "FaSchool",
+        "importDonnees": "FaFileImport",
+        "rapports": "FaFileAlt",
+        "parametres": "FaCog"
+    }
+}

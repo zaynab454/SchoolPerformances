@@ -1,0 +1,36 @@
+{
+    "common": {
+        "direction": "ltr",
+        "dashboard": "Dashboard",
+        "analyseCommune": "Common Analysis",
+        "analyseEtablissement": "School Analysis",
+        "importDonnees": "Import Data",
+        "rapports": "Reports",
+        "parametres": "Settings",
+        "deconnexion": "Logout",
+        "notifications": "Notifications",
+        "profil": "Profile",
+        "modeSombre": "Dark Mode",
+        "pleinEcran": "Fullscreen"
+    },
+    "dashboard": {
+        "title": "Dashboard",
+        "welcome": "Welcome",
+        "stats": "Statistics"
+    },
+    "analyse": {
+        "title": "Analysis",
+        "common": "Common Analysis",
+        "etablissement": "School Analysis"
+    },
+    "import": {
+        "title": "Data Import",
+        "instructions": "Import Instructions"
+    },
+    "parametres": {
+        "title": "Settings",
+        "general": "General",
+        "notifications": "Notifications",
+        "security": "Security"
+    }
+}
