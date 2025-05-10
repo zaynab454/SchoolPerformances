@@ -14,6 +14,7 @@ class Eleve extends Model
 
     protected $table = 'eleve';
     protected $primaryKey = 'code_eleve';
+    public $incrementing = false;
 
     protected $fillable = [
         'nom_eleve_ar',

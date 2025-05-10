@@ -21,25 +21,23 @@ Route::prefix('auth')->group(function () {
 // Routes API pour les statistiques
 Route::prefix('province')->group(function () {
     Route::get('/stats{annee_scolaire?}', [DashboardController::class, 'statsProvince']);
-    Route::get('/moyennes-province/{annee_scolaire?}', [DashboardController::class, 'evaluationMoyennesParProvince']);
+    Route::get('/evolution', [DashboardController::class, 'evolutionProvince']);
     Route::get('/top-etablissements/{annee_scolaire?}', [DashboardController::class, 'topEtablissementsParProvince']);
-    Route::get('/cycles/{annee_scolaire?}', [DashboardController::class, 'statsParCycle']);
+    Route::get('/cycles/{annee_scolaire}', [DashboardController::class, 'statsParCycle']);
     Route::get('/comparaison-communes/{id_province}/{annee_scolaire?}', [DashboardController::class, 'comparaisonCommunesProvince']);
+  
 });
 
 // Routes API pour les communes
 Route::prefix('commune')->group(function () {
-    // Get all communes
-    Route::get('/', [CommuneController::class, 'index']);
-    // Get a specific commune
-    Route::get('/{id}', [CommuneController::class, 'show']);
-    // Get all academic years for selection
-    Route::get('/annees', [CommuneController::class, 'getAnneesScolaires']);
     // Get all communes for selection
     Route::get('/communes', [CommuneController::class, 'getCommunes']);
     // Get commune statistics
     Route::get('/{id_commune}/stats/{annee_scolaire?}', [CommuneController::class, 'statCommune']);
+    // Get commune evolution
     Route::get('/{id_commune}/evolution', [CommuneController::class, 'evolutionCommune']);
+    // Get statistics by cycle for a specific commune
+    Route::get('/{id_commune}/cycles/{annee_scolaire?}', [CommuneController::class, 'statsParCycle']);
 });
 
 // Routes API pour les établissements

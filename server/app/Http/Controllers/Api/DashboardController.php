@@ -16,64 +16,61 @@ use Illuminate\Support\Facades\Validator;
 
 class DashboardController extends Controller
 {
+   
+
     /**
      * Get statistics by province
      * 
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
+
+
+     
     public function statsProvince(Request $request)
     {
         try {
-            // Validation de l'année scolaire
-            $validator = Validator::make($request->all(), [
-                'annee_scolaire' => 'nullable|regex:/^\d{4}-\d{4}$/'
-            ]);
+            $anneeScolaire = $request->query('annee_scolaire');
 
-            if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Erreur de validation',
-                    'errors' => $validator->errors()
-                ], 422);
+            // Si aucune année n'est spécifiée, utiliser l'année courante
+            if (!$anneeScolaire) {
+                $anneeCourante = AnneeScolaire::where('est_courante', true)->first();
+                if ($anneeCourante) {
+                    $anneeScolaire = $anneeCourante->annee_scolaire;
+                }
             }
 
-            // Récupérer l'année scolaire active si non spécifiée
-            $annee_scolaire = $request->annee_scolaire ?? AnneeScolaire::where('est_courante', true)->value('annee_scolaire');
-
-            if (!$annee_scolaire) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Aucune année scolaire active n\'est définie'
-                ], 400);
-            }
-
-            // Récupérer la province unique avec ses communes
-            $province = Province::with(['communes.etablissements.eleves.resultats' => function($query) use ($annee_scolaire) {
-                $query->where('annee_scolaire', $annee_scolaire);
-            }])->first();
+            // Charger la province avec tous les enfants nécessaires
+            $province = Province::with([
+                'communes.etablissements' => function($query) {
+                    $query->withCount('eleves');
+                }
+            ])->first();
 
             if (!$province) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Aucune province trouvée'
+                    'message' => 'Province non trouvée'
                 ], 404);
             }
 
-            $nombreCommunes = $province->communes->count();
-            $nombreEtablissements = $province->communes->sum(function($commune) {
-                return $commune->etablissements->count();
-            });
-            
             $totalEleves = 0;
             $totalResultats = 0;
             $totalReussis = 0;
             $sommeMoyennes = 0;
 
+            // Compter les communes et établissements directement
+            $nombreCommunes = $province->communes->count();
+            $nombreEtablissements = $province->communes->sum(function($commune) {
+                return $commune->etablissements->count();
+            });
+
+            // Parcourir les élèves et résultats
             foreach ($province->communes as $commune) {
                 foreach ($commune->etablissements as $etablissement) {
                     foreach ($etablissement->eleves as $eleve) {
-                        $resultats = $eleve->resultats;
+                        // Filtrer les résultats par année scolaire
+                        $resultats = $eleve->resultats->where('annee_scolaire', $anneeScolaire);
                         if ($resultats->isNotEmpty()) {
                             $totalEleves++;
                             $totalResultats++;
@@ -95,7 +92,7 @@ class DashboardController extends Controller
                 'success' => true,
                 'message' => 'Statistiques de la province récupérées avec succès',
                 'data' => [
-                    'annee_scolaire' => $annee_scolaire,
+                    'annee_scolaire' => $anneeScolaire,
                     'province' => [
                         'id_province' => $province->id_province,
                         'nom_province' => $province->nom_province,
@@ -110,6 +107,7 @@ class DashboardController extends Controller
                     ]
                 ]
             ]);
+          
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -119,149 +117,224 @@ class DashboardController extends Controller
         }
     }
 
-    public function evaluationMoyennesParProvince($anneeScolaire = null)
-    {
-        // Si aucune année n'est spécifiée, utiliser l'année courante
-        if (!$anneeScolaire) {
-            $anneeCourante = AnneeScolaire::where('est_courante', true)->first();
-            if ($anneeCourante) {
-                $anneeScolaire = $anneeCourante->annee_scolaire;
-            }
-        }
 
-        $resultats = Province::with([
-            'communes.etablissements.eleves.resultats' => function($query) use ($anneeScolaire) {
-                if ($anneeScolaire) {
-                    $query->where('annee_scolaire', $anneeScolaire);
+     /**
+     * Get province statistics evolution over years
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function evolutionProvince()
+    {
+        try {
+            // Récupérer toutes les années scolaires
+            $anneesScolaires = AnneeScolaire::orderBy('annee_scolaire', 'asc')->get();
+
+            $statistiques = [];
+            
+            foreach ($anneesScolaires as $annee) {
+                $nombreEleves = 0;
+                $sommeMoyennes = 0;
+                $nombreMoyennes = 0;
+                $nombreReussis = 0;
+
+                // Charger les élèves avec leurs résultats pour cette année
+                $eleves = Eleve::with(['resultats' => function($query) use ($annee) {
+                    $query->where('annee_scolaire', $annee->annee_scolaire);
+                }])
+                ->get();
+
+                // Parcourir les élèves et leurs résultats
+                foreach ($eleves as $eleve) {
+                    foreach ($eleve->resultats as $resultat) {
+                        $nombreEleves++;
+                        $sommeMoyennes += $resultat->MoyenSession;
+                        $nombreMoyennes++;
+                        if ($resultat->MoyenSession >= 10) {
+                            $nombreReussis++;
+                        }
+                    }
+                }
+
+                $moyenneGenerale = $nombreMoyennes > 0 ? $sommeMoyennes / $nombreMoyennes : 0;
+                $tauxReussite = $nombreEleves > 0 ? ($nombreReussis / $nombreEleves) * 100 : 0;
+
+                $statistiques[] = [
+                    'annee_scolaire' => $annee->annee_scolaire,
+                    'nombre_eleves' => $nombreEleves,
+                    'moyenne_generale' => round($moyenneGenerale, 2),
+                    'taux_reussite' => round($tauxReussite, 2)
+                ];
+            }
+
+            // Charger le nom de la province
+            $province = Province::first();
+            if (!$province) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Province non trouvée'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'province' => $province->nom_province,
+                    'statistiques' => $statistiques
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors du calcul des statistiques',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+    public function topEtablissementsParProvince($anneeScolaire = null)
+    {
+        
+        // Charger les élèves avec leurs résultats et leur établissement
+        $eleves = Eleve::with(['etablissement', 'resultats' => function($q) use ($anneeScolaire) {
+            if ($anneeScolaire) {
+                $q->where('annee_scolaire', $anneeScolaire);
+            }
+        }])
+        ->get();
+        
+        
+        
+        
+        
+        // Filtrer les élèves qui ont des résultats pour l'année spécifiée
+        $elevesAvecResultats = $eleves->filter(function($eleve) use ($anneeScolaire) {
+            foreach ($eleve->resultats as $resultat) {
+                if ($resultat->annee_scolaire === $anneeScolaire) {
+                    return true;
                 }
             }
-        ])
-        ->get()
-        ->map(function($province) {
-            $nombreEleves = 0;
-            $sommeMoyennes = 0;
-            $nombreMoyennes = 0;
+            return false;
+        });
+        
+        
+        
+        // Grouper les élèves par établissement
+        $etablissements = $elevesAvecResultats->groupBy('code_etab')->map(function($eleves, $codeEtab) {
+            
+            // Rechercher l'établissement avec et sans suffixe R
+            $etablissement = Etablissement::where('code_etab', $codeEtab)
+                ->orWhere('code_etab', str_replace('R', '', $codeEtab))
+                ->first();
+            
+            if (!$etablissement) {
+                return null;
+            }
 
-            foreach ($province->communes as $commune) {
-                foreach ($commune->etablissements as $etablissement) {
+            $moyenneGenerale = 0;
+            $nombreEleves = 0;
+            $nombreResultats = 0;
+
+            foreach ($eleves as $eleve) {
+                // Vérifier si l'élève a des résultats
+                if (count($eleve->resultats) > 0) {
+                    $nombreEleves++;
+                }
+
+                foreach ($eleve->resultats as $resultat) {
+
+                    $moyenneGenerale += $resultat->MoyenSession;
+                    $nombreResultats++;
+                }
+            }
+
+            // Calculer la moyenne générale
+            $moyenneGenerale = $nombreResultats > 0 ? $moyenneGenerale / $nombreResultats : 0;
+
+            return [
+                'nom_etablissement' => $etablissement->nom_etab_fr,
+                'moyenne_generale' => $moyenneGenerale,
+                'nombre_eleves' => $nombreEleves
+            ];
+        })->filter(); // Filtrer les établissements null
+
+        // Trier par moyenne générale décroissante et prendre les 5 premiers
+        $resultats = $etablissements->sortByDesc('moyenne_generale')->take(5);
+        
+        // Convertir les résultats en tableau pour une meilleure lisibilité
+        $resultatsArray = $resultats->values()->toArray();
+
+        return response()->json([
+            'success' => true,
+            'data' => $resultatsArray
+        ]);
+    }
+
+    public function statsParCycle($anneeScolaire)
+    {
+        try {
+            // Charger les établissements avec leurs élèves et résultats
+            $etablissements = Etablissement::with([
+                'eleves' => function($query) use ($anneeScolaire) {
+                    $query->with(['resultats' => function($q) use ($anneeScolaire) {
+                        $q->select('code_eleve', 'MoyenSession', 'annee_scolaire')
+                         ->where('annee_scolaire', $anneeScolaire);
+                    }])
+                    ->select('code_eleve', 'nom_eleve_ar', 'prenom_eleve_ar', 'code_etab')
+                    ->whereHas('resultats', function($r) use ($anneeScolaire) {
+                        $r->where('annee_scolaire', $anneeScolaire);
+                    });
+                }
+            ])
+            ->get();
+
+            // Grouper par cycle et calculer les statistiques
+            $resultats = $etablissements->groupBy('cycle')->map(function($group) use ($anneeScolaire) {
+
+                $nombreEleves = 0;
+                $sommeMoyennes = 0;
+                $nombreMoyennes = 0;
+                $nombreReussis = 0;
+
+                foreach ($group as $etablissement) {
                     foreach ($etablissement->eleves as $eleve) {
                         foreach ($eleve->resultats as $resultat) {
                             $nombreEleves++;
                             $sommeMoyennes += $resultat->MoyenSession;
                             $nombreMoyennes++;
+                            if ($resultat->MoyenSession >= 10) {
+                                $nombreReussis++;
+                            }
                         }
                     }
                 }
-            }
 
-            $moyenneGenerale = $nombreMoyennes > 0 ? $sommeMoyennes / $nombreMoyennes : 0;
+                $moyenneGenerale = $nombreMoyennes > 0 ? $sommeMoyennes / $nombreMoyennes : 0;
+                $tauxReussite = $nombreEleves > 0 ? ($nombreReussis / $nombreEleves) * 100 : 0;
 
-            return [
-                'province' => $province->nom_province,
-                'nombre_eleves' => $nombreEleves,
-                'moyenne_generale' => round($moyenneGenerale, 2)
-            ];
-        });
+                return [
+                    'cycle' => $group[0]->cycle,
+                    'nombre_eleves' => $nombreEleves,
+                    'moyenne_generale' => round($moyenneGenerale, 2),
+                    'taux_reussite' => round($tauxReussite, 2)
+                ];
+            });
 
-        return response()->json([
-            'success' => true,
-            'data' => $resultats
-        ]);
-    }
+            // Convertir en tableau pour une meilleure lisibilité
+            $resultatsArray = $resultats->values()->toArray();
 
-    public function topEtablissementsParProvince($anneeScolaire = null)
-    {
-        // Si aucune année n'est spécifiée, utiliser l'année courante
-        if (!$anneeScolaire) {
-            $anneeCourante = AnneeScolaire::where('est_courante', true)->first();
-            if ($anneeCourante) {
-                $anneeScolaire = $anneeCourante->annee_scolaire;
-            }
+            return response()->json([
+                'success' => true,
+                'data' => $resultatsArray
+            ]);
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors du calcul des statistiques par cycle',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $resultats = Etablissement::with([
-            'eleves.resultats' => function($query) use ($anneeScolaire) {
-                if ($anneeScolaire) {
-                    $query->where('annee_scolaire', $anneeScolaire);
-                }
-            }
-        ])
-        ->whereHas('eleves.resultats')
-        ->get()
-        ->map(function($etablissement) {
-            $nombreEleves = 0;
-            $sommeMoyennes = 0;
-            $nombreMoyennes = 0;
-
-            foreach ($etablissement->eleves as $eleve) {
-                foreach ($eleve->resultats as $resultat) {
-                    $nombreEleves++;
-                    $sommeMoyennes += $resultat->MoyenSession;
-                    $nombreMoyennes++;
-                }
-            }
-
-            $moyenneGenerale = $nombreMoyennes > 0 ? $sommeMoyennes / $nombreMoyennes : 0;
-
-            return [
-                'nom_etablissement' => $etablissement->nom_etab_fr,
-                'moyenne_generale' => round($moyenneGenerale, 2),
-                'nombre_eleves' => $nombreEleves
-            ];
-        })
-        ->sortByDesc('moyenne_generale')
-        ->take(5);
-
-        return response()->json([
-            'success' => true,
-            'data' => $resultats
-        ]);
-    }
-
-    public function statsParCycle($anneeScolaire = null)
-    {
-        // Si aucune année n'est spécifiée, utiliser l'année courante
-        if (!$anneeScolaire) {
-            $anneeCourante = AnneeScolaire::where('est_courante', true)->first();
-            if ($anneeCourante) {
-                $anneeScolaire = $anneeCourante->annee_scolaire;
-            }
-        }
-
-        $resultats = NiveauScolaire::with([
-            'eleves.resultats' => function($query) use ($anneeScolaire) {
-                if ($anneeScolaire) {
-                    $query->where('annee_scolaire', $anneeScolaire);
-                }
-            }
-        ])
-        ->get()
-        ->map(function($niveau) {
-            $nombreEleves = 0;
-            $sommeMoyennes = 0;
-            $nombreMoyennes = 0;
-
-            foreach ($niveau->eleves as $eleve) {
-                foreach ($eleve->resultats as $resultat) {
-                    $nombreEleves++;
-                    $sommeMoyennes += $resultat->MoyenSession;
-                    $nombreMoyennes++;
-                }
-            }
-
-            $moyenneGenerale = $nombreMoyennes > 0 ? $sommeMoyennes / $nombreMoyennes : 0;
-
-            return [
-                'cycle' => $niveau->description,
-                'nombre_eleves' => $nombreEleves,
-                'moyenne_generale' => round($moyenneGenerale, 2)
-            ];
-        });
-
-        return response()->json([
-            'success' => true,
-            'data' => $resultats
-        ]);
     }
 
     public function comparaisonCommunesProvince($id_province, $anneeScolaire = null)
@@ -337,154 +410,8 @@ class DashboardController extends Controller
         ]);
     }
 
-    /**
-     * Get all academic years for filtering
-     */
-    public function getAnneesScolaires()
-    {
-        $annees = AnneeScolaire::orderBy('annee_scolaire', 'desc')->get();
-        return response()->json([
-            'success' => true,
-            'data' => $annees
-        ]);
-    }
+  
 
-    /**
-     * Get all communes for filtering
-     */
-    public function getCommunes()
-    {
-        $communes = Commune::orderBy('ll_com', 'asc')->get();
-        return response()->json([
-            'success' => true,
-            'data' => $communes
-        ]);
-    }
 
-    /**
-     * Get establishments by commune
-     */
-    public function getEtablissementsByCommune(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'code_commune' => 'required|exists:commune,cd_com'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur de validation',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $etablissements = Etablissement::where('code_commune', $request->code_commune)
-            ->orderBy('nom_etab_fr', 'asc')
-            ->get();
-
-        return response()->json([
-            'success' => true,
-            'data' => $etablissements
-        ]);
-    }
-
-    /**
-     * Get statistics by filters
-     */
-    public function getStatsByFilters(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'annee_scolaire' => 'required|exists:annee_scolaire,annee_scolaire',
-            'code_commune' => 'nullable|exists:commune,cd_com',
-            'code_etab' => 'nullable|exists:etablissement,code_etab'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur de validation',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $query = ResultatEleve::query()
-            ->join('eleve', 'resultat_eleve.code_eleve', '=', 'eleve.code_eleve')
-            ->join('etablissement', 'eleve.code_etab', '=', 'etablissement.code_etab')
-            ->join('commune', 'etablissement.code_commune', '=', 'commune.cd_com')
-            ->where('resultat_eleve.annee_scolaire', $request->annee_scolaire);
-
-        // Filtrer par commune si spécifiée
-        if ($request->has('code_commune')) {
-            $query->where('commune.cd_com', $request->code_commune);
-        }
-
-        // Filtrer par établissement si spécifié
-        if ($request->has('code_etab')) {
-            $query->where('etablissement.code_etab', $request->code_etab);
-        }
-
-        // Calculer les statistiques
-        $stats = $query->select(
-            DB::raw('COUNT(DISTINCT eleve.code_eleve) as total_eleves'),
-            DB::raw('AVG(resultat_eleve.MoyenSession) as moyenne_generale'),
-            DB::raw('COUNT(DISTINCT CASE WHEN resultat_eleve.MoyenSession >= 10 THEN eleve.code_eleve END) as eleves_admis'),
-            DB::raw('COUNT(DISTINCT etablissement.code_etab) as total_etablissements')
-        )->first();
-
-        // Calculer le taux de réussite
-        $stats->taux_reussite = $stats->total_eleves > 0 
-            ? round(($stats->eleves_admis / $stats->total_eleves) * 100, 2)
-            : 0;
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'statistiques' => $stats,
-                'filtres' => [
-                    'annee_scolaire' => $request->annee_scolaire,
-                    'commune' => $request->code_commune,
-                    'etablissement' => $request->code_etab
-                ]
-            ]
-        ]);
-    }
-
-    /**
-     * Get detailed statistics by establishment
-     */
-    public function getStatsByEtablissement(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'annee_scolaire' => 'required|exists:annee_scolaire,annee_scolaire',
-            'code_etab' => 'required|exists:etablissement,code_etab'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur de validation',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $stats = ResultatEleve::join('eleve', 'resultat_eleve.code_eleve', '=', 'eleve.code_eleve')
-            ->where('eleve.code_etab', $request->code_etab)
-            ->where('resultat_eleve.annee_scolaire', $request->annee_scolaire)
-            ->select(
-                DB::raw('COUNT(DISTINCT eleve.code_eleve) as total_eleves'),
-                DB::raw('AVG(resultat_eleve.MoyenSession) as moyenne_generale'),
-                DB::raw('COUNT(DISTINCT CASE WHEN resultat_eleve.MoyenSession >= 10 THEN eleve.code_eleve END) as eleves_admis'),
-                DB::raw('COUNT(DISTINCT CASE WHEN resultat_eleve.MoyenSession < 10 THEN eleve.code_eleve END) as eleves_echoues')
-            )->first();
-
-        // Calculer le taux de réussite
-        $stats->taux_reussite = $stats->total_eleves > 0 
-            ? round(($stats->eleves_admis / $stats->total_eleves) * 100, 2)
-            : 0;
-
-        return response()->json([
-            'success' => true,
-            'data' => $stats
-        ]);
-      }
+   
 }

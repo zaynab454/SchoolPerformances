@@ -16,6 +16,7 @@ class Etablissement extends Model
     protected $primaryKey = 'code_etab';
 
     protected $fillable = [
+        'code_etab',
         'nom_etab_fr',
         'nom_etab_ar',
         'code_commune',
@@ -24,7 +25,7 @@ class Etablissement extends Model
 
     public function commune()
     {
-        return $this->belongsTo(Commune::class, 'code_commune');
+        return $this->belongsTo(Commune::class, 'code_commune', 'cd_com');
     }
 
     public function secteurScolaire()
@@ -35,5 +36,10 @@ class Etablissement extends Model
     public function eleves()
     {
         return $this->hasMany(Eleve::class, 'code_etab');
+    }
+
+    public function getCodeEtabAttribute($value)
+    {
+        return $value;
     }
 }

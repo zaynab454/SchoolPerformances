@@ -16,47 +16,8 @@ use Illuminate\Support\Facades\DB;
 
 class EtablissementController extends Controller
 {
-    /**
-     * Get all academic years
-     */
-    public function getAnneesScolaires()
-    {
-        try {
-            $annees = AnneeScolaire::orderBy('annee_scolaire', 'desc')->get();
-            return response()->json([
-                'success' => true,
-                'message' => 'Années scolaires récupérées avec succès',
-                'data' => $annees
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la récupération des années scolaires',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
 
-    /**
-     * Get all communes
-     */
-    public function getCommunes()
-    {
-        try {
-            $communes = Commune::orderBy('ll_com', 'asc')->get();
-            return response()->json([
-                'success' => true,
-                'message' => 'Communes récupérées avec succès',
-                'data' => $communes
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la récupération des communes',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
+
 
     /**
      * Get establishments by commune

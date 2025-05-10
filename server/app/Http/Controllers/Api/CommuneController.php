@@ -14,17 +14,9 @@ use Illuminate\Support\Facades\DB;
 
 class CommuneController extends Controller
 {
-    /**
-     * Get all academic years for selection
-     */
-    public function getAnneesScolaires()
-    {
-        $annees = AnneeScolaire::all();
-        return response()->json([
-            'success' => true,
-            'annees' => $annees
-        ]);
-    }
+
+
+  
 
     /**
      * Get all communes for selection
@@ -309,6 +301,82 @@ class CommuneController extends Controller
             'taux_echec' => round($tauxEchec, 2),
             'rang_province' => $rangProvince !== false ? $rangProvince + 1 : null
         ];
+    }
+
+      /**
+     * Get statistics by cycle for a specific commune
+     */
+    public function statsParCycle($id_commune, $annee_scolaire = null)
+    {
+        try {
+            // Get the active academic year if none is provided
+            if (!$annee_scolaire) {
+                $anneeScolaire = AnneeScolaire::where('active', true)->first();
+                if ($anneeScolaire) {
+                    $annee_scolaire = $anneeScolaire->annee;
+                }
+            }
+
+            \Log::info('Recherche des statistiques pour la commune: ' . $id_commune);
+            \Log::info('Année scolaire: ' . $annee_scolaire);
+
+            // Get statistics by cycle using Eloquent
+            $resultats = Etablissement::with(['eleves.resultats'])
+            ->whereHas('commune', function($q) use ($id_commune) {
+                $q->where('cd_com', $id_commune);
+            })
+            ->whereHas('eleves', function($q) use ($annee_scolaire) {
+                $q->whereHas('resultats', function($r) use ($annee_scolaire) {
+                    $r->where('annee_scolaire', $annee_scolaire);
+                });
+            })
+            ->get()
+            ->groupBy('cycle')
+            ->map(function($group) use ($annee_scolaire) {
+                $nombreEleves = 0;
+                $sommeMoyennes = 0;
+                $nombreMoyennes = 0;
+                $nombreReussis = 0;
+
+                foreach ($group as $etablissement) {
+                    foreach ($etablissement->eleves as $eleve) {
+                        foreach ($eleve->resultats as $resultat) {
+                            if ($resultat->annee_scolaire == $annee_scolaire) {
+                                $nombreEleves++;
+                                $sommeMoyennes += $resultat->MoyenSession;
+                                $nombreMoyennes++;
+                                if ($resultat->MoyenSession >= 10) {
+                                    $nombreReussis++;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                $moyenneGenerale = $nombreMoyennes > 0 ? $sommeMoyennes / $nombreMoyennes : 0;
+                $tauxReussite = $nombreEleves > 0 ? ($nombreReussis / $nombreEleves) * 100 : 0;
+
+                return [
+                    'cycle' => $group[0]->cycle,
+                    'nombre_eleves' => $nombreEleves,
+                    'moyenne_generale' => round($moyenneGenerale, 2),
+                    'taux_reussite' => round($tauxReussite, 2)
+                ];
+            });
+
+            \Log::info('Résultats trouvés: ' . json_encode($resultats));
+
+            return response()->json([
+                'success' => true,
+                'data' => $resultats->values()->toArray()
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors du calcul des statistiques par cycle',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }
 
