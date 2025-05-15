@@ -33,8 +33,9 @@ function App() {
                 <DashboardLayout />
               </>
             </PrivateRoute>}>
-              <Route index element={<Dashboard />} />
-              <Route path="analyse-commune" element={<AnalyseCommune />} />
+            <Route index element={<Dashboard />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/analyse-commune" element={<AnalyseCommune />} />
               <Route path="analyse-etablissement" element={<AnalyseEtablissement />} />
               <Route path="import-donnees" element={<ImportDonnees />} />
               <Route path="rapports" element={<Rapports />} />

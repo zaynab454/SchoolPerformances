@@ -6,7 +6,7 @@
     background: white;
     position: fixed;
     top: 0;
-    left: var(--sidebar-width, 80px);
+    left: var(--sidebar-width, 256px);
     right: 0;
     z-index: 1000;
     box-shadow: 0 3px 15px rgba(0, 0, 0, 0.1);
@@ -194,11 +194,6 @@ body.dark-mode .year-selector select:focus {
     background-color: rgba(29, 78, 216, 0.1);
     color: #1D4ED8;
     font-weight: 500;
-}
-
-.action-btn:hover {
-    color: #1D4ED8;
-    background-color: rgba(29, 78, 216, 0.1);
 }
 
 .action-btn svg {

@@ -14,7 +14,6 @@ class Admin extends Authenticatable implements MustVerifyEmail
     use HasApiTokens, Notifiable, HasFactory;
 
     protected $table = 'admin';
-    protected $primaryKey = 'id_admin';
     protected $fillable = [
         'nom_admin',
         'prenom_admin',

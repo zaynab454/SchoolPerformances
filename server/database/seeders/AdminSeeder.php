@@ -16,7 +16,7 @@ class AdminSeeder extends Seeder
         Admin::create([
             'nom' => 'Administrateur',
             'email' => 'admin@schoolperformance.ma',
-            'mot_de_passe' => bcrypt('admin123')
+            'password' => bcrypt('admin123')
         ]);
     }
 }

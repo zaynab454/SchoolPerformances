@@ -19,7 +19,6 @@ class AuthController extends Controller
         ]);
 
         $admin = Admin::where('email', $request->email)->first();
-
         if (!$admin || !Hash::check($request->password, $admin->password)) {
             return response()->json([
                 'message' => 'Email ou mot de passe incorrect'
@@ -27,7 +26,6 @@ class AuthController extends Controller
         }
 
         $token = $admin->createToken('auth_token')->plainTextToken;
-
         return response()->json([
             'access_token' => $token,
             'token_type' => 'Bearer',
