@@ -59,56 +59,74 @@ const AnalyseEtablissement = () => {
         {/* Statistiques */}
         <div className="grid grid-cols-5 gap-4">
           <div className="bg-white rounded-xl border p-4 flex flex-col items-center justify-center">
-            <div className="text-sm text-gray-600">rang par province</div>
-            <div className="text-2xl font-bold">20</div>
+            <div className="text-sm text-gray-600">Rang par province</div>
+            <div className="text-2xl text-black font-bold">20</div>
           </div>
           <div className="bg-white rounded-xl border p-4 flex flex-col items-center justify-center">
             <div className="text-sm text-gray-600">Moyenne générale</div>
-            <div className="text-2xl font-bold">14.2 / 20</div>
+            <div className="text-2xl text-black font-bold">14.2 / 20</div>
             <div className="text-xs text-gray-500">Tous établissements confondus</div>
           </div>
           <div className="bg-white rounded-xl border p-4 flex flex-col items-center justify-center">
-            <div className="text-sm text-gray-600">taux de reussie</div>
-            <div className="text-2xl font-bold">80%</div>
+            <div className="text-sm text-gray-600">Taux de réussie</div>
+            <div className="text-2xl text-black font-bold">80%</div>
             <div className="text-xs text-gray-500">Tous établissements confondus</div>
           </div>
           <div className="bg-white rounded-xl border p-4 flex flex-col items-center justify-center">
-            <div className="text-sm text-gray-600">teau d'check</div>
-            <div className="text-2xl font-bold">20%</div>
+            <div className="text-sm text-gray-600">Taux d'échec</div>
+            <div className="text-2xl text-black font-bold">20%</div>
             <div className="text-xs text-gray-500">Tous établissements confondus</div>
           </div>
           <div className="bg-white rounded-xl border p-4 flex flex-col items-center justify-center">
-            <div className="text-sm text-gray-600">cycle</div>
-            <div className="text-2xl font-bold">collégial</div>
+            <div className="text-sm text-gray-600">Cycle</div>
+            <div className="text-2xl text-black font-bold">collégial</div>
           </div>
         </div>
         {/* Onglets */}
-        <div className="flex gap-2 mt-4">
-          <button
-            className={`px-4 py-1 rounded-t-lg font-semibold border ${tab === 'niveau' ? 'bg-gray-200' : 'bg-white'}`}
+        <div className="flex mb-8 w-full max-w-2xl mx-auto mt-4">
+          <div
+            className={`flex-1 py-2 text-center cursor-pointer border border-gray-400 rounded-l-xl text-lg font-medium transition
+              ${tab === 'niveau' ? 'bg-white text-black' : 'bg-gray-200 text-gray-600'}`}
+            style={{
+              borderRight: '0.75rem',
+              borderTopRightRadius: tab === 'niveau' ? 0 : 'none',
+              borderBottomRightRadius: tab === 'niveau' ? 0 : 'none'
+            }}
             onClick={() => setTab('niveau')}
           >
             par niveau
-          </button>
-          <button
-            className={`px-4 py-1 rounded-t-lg border ${tab === 'matiere' ? 'bg-gray-200' : 'bg-white'}`}
+          </div>
+          <div
+            className={`flex-1 py-2 text-center cursor-pointer border border-gray-400 text-lg font-medium transition
+              ${tab === 'matiere' ? 'bg-white text-black' : 'bg-gray-200 text-gray-600'}`}
+            style={{
+              borderLeft: 'none',
+              borderRight: 'none',
+              borderRadius: 0
+            }}
             onClick={() => setTab('matiere')}
           >
-            par matiere
-          </button>
-          <button
-            className={`px-4 py-1 rounded-t-lg border ${tab === 'annuelle' ? 'bg-gray-200' : 'bg-white'}`}
+            par matière
+          </div>
+          <div
+            className={`flex-1 py-2 text-center cursor-pointer border border-gray-400 rounded-r-xl text-lg font-medium transition
+              ${tab === 'annuelle' ? 'bg-white text-black' : 'bg-gray-200 text-gray-600'}`}
+            style={{
+              borderLeft: '0.75rem',
+              borderTopLeftRadius: tab === 'annuelle' ? 0 : 'none',
+              borderBottomLeftRadius: tab === 'annuelle' ? 0 : 'none'
+            }}
             onClick={() => setTab('annuelle')}
           >
-            evaluation annuelle
-          </button>
+            évaluation annuelle
+          </div>
         </div>
         {/* Onglets dynamiques */}
         {tab === 'niveau' && (
           <>
             <div className="grid grid-cols-2 gap-6 mt-2">
               <div className="bg-white rounded-xl border p-4 flex flex-col items-center">
-                <div className="font-semibold mb-2">moyenne par niveau</div>
+                <div className="font-semibold text-black mb-2">moyenne par niveau</div>
                 <ResponsiveContainer width="100%" height={180}>
                   <BarChart data={barDataNiveau}>
                     <XAxis dataKey="niveau" />
@@ -119,7 +137,7 @@ const AnalyseEtablissement = () => {
                 </ResponsiveContainer>
               </div>
               <div className="bg-white rounded-xl border p-4 flex flex-col items-center">
-                <div className="font-semibold mb-2">taux de reussi par niveau</div>
+                <div className="font-semibold text-black mb-2">taux de reussi par niveau</div>
                 <ResponsiveContainer width="100%" height={180}>
                   <BarChart data={barDataNiveau} layout="vertical">
                     <XAxis type="number" />
@@ -132,7 +150,7 @@ const AnalyseEtablissement = () => {
             </div>
             <div className="grid grid-cols-2 gap-6 mt-2">
               <div className="bg-white rounded-xl border p-4 flex flex-col items-center">
-                <div className="font-semibold mb-2">repartition des note par niveau</div>
+                <div className="font-semibold text-black mb-2">repartition des note par niveau</div>
                 <ResponsiveContainer width="100%" height={180}>
                   <PieChart>
                     <Pie data={pieDataNiveau} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} label>
@@ -146,7 +164,7 @@ const AnalyseEtablissement = () => {
                 </ResponsiveContainer>
               </div>
               <div className="bg-white rounded-xl border p-4 flex flex-col items-center">
-                <div className="font-semibold mb-2">détail des notes par niveau</div>
+                <div className="font-semibold text-black mb-2">détail des notes par niveau</div>
                 <ul className="list-disc ml-6 text-sm text-gray-700">
                   <li>note entre 8 et 10 : 25%</li>
                   <li>note entre 10 et 12 : 25%</li>
@@ -161,7 +179,7 @@ const AnalyseEtablissement = () => {
           <>
             <div className="grid grid-cols-2 gap-6 mt-2">
               <div className="bg-white rounded-xl border p-4 flex flex-col items-center">
-                <div className="font-semibold mb-2">moyenne par matiere</div>
+                <div className="font-semibold text-black mb-2">moyenne par matiere</div>
                 <ResponsiveContainer width="100%" height={180}>
                   <BarChart data={barDataMatiere}>
                     <XAxis dataKey="matiere" />
@@ -172,7 +190,7 @@ const AnalyseEtablissement = () => {
                 </ResponsiveContainer>
               </div>
               <div className="bg-white rounded-xl border p-4 flex flex-col items-center">
-                <div className="font-semibold mb-2">taux de reussi par matiere</div>
+                <div className="font-semibold text-black mb-2">taux de reussi par matiere</div>
                 <ResponsiveContainer width="100%" height={180}>
                   <BarChart data={barDataMatiere} layout="vertical">
                     <XAxis type="number" />
@@ -185,7 +203,7 @@ const AnalyseEtablissement = () => {
             </div>
             <div className="grid grid-cols-2 gap-6 mt-2">
               <div className="bg-white rounded-xl border p-4 flex flex-col items-center">
-                <div className="font-semibold mb-2">repartition des note par matiere</div>
+                <div className="font-semibold text-black mb-2">repartition des note par matiere</div>
                 <ResponsiveContainer width="100%" height={180}>
                   <PieChart>
                     <Pie data={pieDataMatiere} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} label>
@@ -199,7 +217,7 @@ const AnalyseEtablissement = () => {
                 </ResponsiveContainer>
               </div>
               <div className="bg-white rounded-xl border p-4 flex flex-col items-center">
-                <div className="font-semibold mb-2">détail des notes par matiere</div>
+                <div className="font-semibold text-black mb-2">détail des notes par matiere</div>
                 <ul className="list-disc ml-6 text-sm text-gray-700">
                   <li>note entre 8 et 10 : 20%</li>
                   <li>note entre 10 et 12 : 25%</li>
@@ -214,7 +232,7 @@ const AnalyseEtablissement = () => {
           <>
             <div className="grid grid-cols-2 gap-6 mt-2">
               <div className="bg-white rounded-xl border p-4 flex flex-col items-center">
-                <div className="font-semibold mb-2">evaluation de moyenne par anne</div>
+                <div className="font-semibold text-black mb-2">evaluation de moyenne par anne</div>
                 <ResponsiveContainer width="100%" height={120}>
                   <LineChart data={lineData}>
                     <XAxis dataKey="year" />
@@ -225,7 +243,7 @@ const AnalyseEtablissement = () => {
                 </ResponsiveContainer>
               </div>
               <div className="bg-white rounded-xl border p-4 flex flex-col items-center">
-                <div className="font-semibold mb-2">evaluation de taux de reussi par anne</div>
+                <div className="font-semibold text-black mb-2">evaluation de taux de reussi par anne</div>
                 <ResponsiveContainer width="100%" height={120}>
                   <BarChart data={tauxData} layout="vertical">
                     <XAxis type="number" />
@@ -237,8 +255,8 @@ const AnalyseEtablissement = () => {
               </div>
             </div>
             <div className="mt-6">
-              <div className="font-semibold mb-2">Observations clés</div>
-              <ul className="list-disc ml-6 text-sm text-gray-700">
+              <div className="font-semibold text-start text-black mb-2">Observations clés</div>
+              <ul className="list-disc ml-6 text-start text-sm text-gray-700">
                 <li>Augmentation constante du taux de réussite depuis 2016 (de 58% à 78%)</li>
                 <li>Légère baisse en 2020 due à la pandémie (de 68% à 64%)</li>
                 <li>Reprise rapide post-pandémie avec une croissance accélérée (de 64% à 70% en un an)</li>

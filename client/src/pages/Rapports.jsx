@@ -8,19 +8,31 @@ const Rapports = () => {
   <main className="flex-1 p-8 overflow-auto">
     <h1 className="text-5xl text-black font-bold mb-8">Rapports</h1>
     {/* Tabs */}
-    <div className="flex mb-8">
-      <button
-        className={`flex-1 py-2 rounded-l-lg mr-3 border ${tab === 'available' ? 'bg-white' : 'bg-gray-200'}`}
+    <div className="flex mb-8 w-full max-w-2xl mx-auto">
+      <div
+        className={`flex-1 py-2 text-center cursor-pointer border border-gray-400 rounded-l-xl text-lg font-medium transition
+          ${tab === 'available' ? 'bg-white text-black' : 'bg-gray-200 text-gray-600'}`}
+        style={{
+          borderRight: 'none',
+          borderTopRightRadius: tab === 'available' ? 0 : '0.75rem',
+          borderBottomRightRadius: tab === 'available' ? 0 : '0.75rem'
+        }}
         onClick={() => setTab('available')}
       >
-        available reports
-      </button>
-      <button
-        className={`flex-1 py-2 rounded-r-lg border ${tab === 'generate' ? 'bg-white' : 'bg-gray-200'}`}
+        Rapports disponibles
+      </div>
+      <div
+        className={`flex-1 py-2 text-center cursor-pointer border border-gray-400 rounded-r-xl text-lg font-medium transition
+          ${tab === 'generate' ? 'bg-white text-black' : 'bg-gray-200 text-gray-600'}`}
+        style={{
+          borderLeft: 'none',
+          borderTopLeftRadius: tab === 'generate' ? 0 : '0.75rem',
+          borderBottomLeftRadius: tab === 'generate' ? 0 : '0.75rem'
+        }}
         onClick={() => setTab('generate')}
       >
-        generate report
-      </button>
+        Générer un rapport
+      </div>
     </div>
     {/* Content */}
     {tab === 'generate' ? (

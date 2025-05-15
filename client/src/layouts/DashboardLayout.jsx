@@ -9,16 +9,16 @@ const DashboardLayout = () => {
         <div>
           <div className="h-24"></div>
           <nav className="flex flex-col gap-2">
-            <a href="/dashboard" className="px-6 py-3 text-[#2d2c5a] rounded-l-full font-semibold">Tableau de bord</a>
-            <a href="/analyse-commune" className="px-6 py-3 hover:bg-[#23224a] ">Analyse par commune</a>
-            <a href="/analyse-etablissement" className="px-6 py-3 hover:bg-[#23224a] ">Analyse par établissement</a>
-            <a href="/import-donnees" className="px-6 py-3 hover:bg-[#23224a] ">Importation des données</a>
-            <a href="/rapports" className="px-6 py-3 hover:bg-[#23224a] ">Rapport</a>
-            <a href="/parametres" className="px-6 py-3 hover:bg-[#23224a] ">Paramètres</a>
+            <a href="/dashboard" className="px-6 py-3 text-[#2d2c5a] text-start rounded-l-full font-semibold">Tableau de bord</a>
+            <a href="/analyse-commune" className="px-6 py-3 text-start hover:bg-[#23224a] ">Analyse par commune</a>
+            <a href="/analyse-etablissement" className="px-6 py-3 text-start hover:bg-[#23224a] ">Analyse par établissement</a>
+            <a href="/import-donnees" className="px-6 py-3 text-start hover:bg-[#23224a] ">Importation des données</a>
+            <a href="/rapports" className="px-6 py-3 text-start hover:bg-[#23224a] ">Rapport</a>
+            <a href="/parametres" className="px-6 py-3 text-start hover:bg-[#23224a] ">Paramètres</a>
           </nav>
         </div>
         <div className="mb-8 px-6">
-          <button className="text-white justify-content-end hover:underline">se deconnecter</button>
+          <a href="/login" className="px-6 py-3 hover:bg-[#23224a] ">Se déconnecter</a>
         </div>
       </aside>
       {/* Main content */}

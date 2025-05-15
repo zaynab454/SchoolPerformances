@@ -46,29 +46,29 @@ const AnalyseCommune = () => {
         {/* Statistiques */}
         <div className="grid grid-cols-4 gap-4">
           <div className="bg-white rounded-xl border p-4 flex flex-col items-center justify-center">
-            <div className="text-sm text-gray-600">rang par province</div>
+            <div className="text-sm text-gray-600">Rang par province</div>
             <div className="text-2xl text-black font-bold">20</div>
           </div>
           <div className="bg-white rounded-xl border p-4 flex flex-col items-center justify-center">
             <div className="text-sm text-gray-600">Moyenne générale</div>
-            <div className="text-2xl font-bold">19/20</div>
+            <div className="text-2xl text-black font-bold">19/20</div>
             <div className="text-xs text-gray-500">Élèves ayant validé leur année</div>
           </div>
           <div className="bg-white rounded-xl border p-4 flex flex-col items-center justify-center">
-            <div className="text-sm text-gray-600">taux de reussie</div>
-            <div className="text-2xl font-bold">80%</div>
+            <div className="text-sm text-gray-600">Taux de reussie</div>
+            <div className="text-2xl text-black font-bold">80%</div>
             <div className="text-xs text-gray-500">Tous établissements confondus</div>
           </div>
           <div className="bg-white rounded-xl border p-4 flex flex-col items-center justify-center">
-            <div className="text-sm text-gray-600">teau d'check</div>
-            <div className="text-2xl font-bold">20%</div>
+            <div className="text-sm text-gray-600">Taux d'échec</div>
+            <div className="text-2xl text-black font-bold">20%</div>
             <div className="text-xs text-gray-500">Tous établissements confondus</div>
           </div>
         </div>
         {/* Diagrammes principaux */}
         <div className="grid grid-cols-2 gap-4 mt-2">
           <div className="bg-white rounded-xl border p-4 flex flex-col items-center">
-            <div className="font-semibold mb-2">Répartition des établissements par cycle</div>
+            <div className="font-semibold text-black mb-2">Répartition des établissements par cycle</div>
             <ResponsiveContainer width="100%" height={180}>
               <PieChart>
                 <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} label>
@@ -82,14 +82,14 @@ const AnalyseCommune = () => {
             </ResponsiveContainer>
           </div>
           <div className="bg-white rounded-xl border p-4 flex flex-col items-center justify-center">
-            <div className="font-semibold mb-2">Carte des communes</div>
+            <div className="font-semibold text-black mb-2">Carte des communes</div>
             <img src="/images/p-o.png" alt="Carte Maroc" className="h-60 w-3xl" />
           </div>
         </div>
         {/* Moyenne par cycle et taux de reussite */}
         <div className="grid grid-cols-2 gap-4 mt-4">
           <div className="bg-white rounded-xl border p-4 flex flex-col items-center">
-            <div className="font-semibold mb-2">moyenne par cycle</div>
+            <div className="font-semibold text-black mb-2">Moyenne par cycle</div>
             <ResponsiveContainer width="100%" height={150}>
               <BarChart data={barData}>
                 <XAxis dataKey="cycle" />
@@ -100,7 +100,7 @@ const AnalyseCommune = () => {
             </ResponsiveContainer>
           </div>
           <div className="bg-white rounded-xl border p-4 flex flex-col items-center">
-            <div className="font-semibold mb-2">teu de reussi cycle</div>
+            <div className="font-semibold text-black mb-2">Taux de reussi cycle</div>
             <ResponsiveContainer width="100%" height={180}>
               <PieChart>
                 <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} label>
@@ -120,14 +120,14 @@ const AnalyseCommune = () => {
         </div>
         {/* Tableau classement */}
         <div className="bg-white rounded-xl border p-4 mt-4">
-          <div className="font-semibold mb-2">Classement des Meilleures Écoles dans le commune</div>
+          <div className="font-semibold text-black mb-2">Classement des Meilleures Écoles dans le commune</div>
           <table className="w-full text-sm">
             <thead>
               <tr>
                 <th className="text-gray-400 text-left py-2 px-4">#</th>
-                <th className="text-gray-400 text-left py-2 px-4">établissement</th>
-                <th className="text-gray-400 text-left py-2 px-4">nombre eleves</th>
-                <th className="text-gray-400 text-left py-2 px-4">moyenne</th>
+                <th className="text-gray-400 text-left py-2 px-4">Etablissement</th>
+                <th className="text-gray-400 text-left py-2 px-4">Nombre eleves</th>
+                <th className="text-gray-400 text-left py-2 px-4">Moyenne</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -145,7 +145,7 @@ const AnalyseCommune = () => {
         {/* Moyenne de province et courbe */}
         <div className="grid grid-cols-2 gap-4 mt-4">
           <div className="bg-white rounded-xl border p-4 flex flex-col items-center">
-            <div className="font-semibold mb-2">moyenne de province</div>
+            <div className="font-semibold text-black mb-2">Moyenne de province</div>
             <ResponsiveContainer width="100%" height={120}>
               <LineChart data={lineData}>
                 <XAxis dataKey="year" />
@@ -156,7 +156,7 @@ const AnalyseCommune = () => {
             </ResponsiveContainer>
           </div>
           <div className="bg-white rounded-xl border p-4 flex flex-col items-center">
-            <div className="font-semibold mb-2">taux de reussite de province</div>
+            <div className="font-semibold text-black mb-2">Taux de reussite de province</div>
             <ResponsiveContainer width="100%" height={120}>
               <BarChart data={tauxData} layout="vertical">
                 <XAxis type="number" />

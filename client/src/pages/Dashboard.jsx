@@ -49,14 +49,14 @@ const Dashboard = () => {
         {summaryData.map((item, idx) => (
           <div key={idx} className="bg-white rounded shadow p-4 flex flex-col items-center">
             <span className="text-lg text-black  font-bold">{item.label}</span>
-            <span className="text-2xl text-gray-700  font-semibold">{item.value}</span>
+            <span className="text-2xl text-gray-500  font-semibold">{item.value}</span>
           </div>
         ))}
       </div>
       {/* Charts and Map */}
       <div className="grid grid-cols-2 gap-4 mb-8">
         <div className="bg-white rounded shadow p-4">
-          <h2 className="font-semibold mb-2">moyenne de province</h2>
+          <h2 className="font-semibold text-black mb-2">moyenne de province</h2>
           <ResponsiveContainer width="100%" height={150}>
             <LineChart data={lineData}>
               <XAxis dataKey="year" />
@@ -73,27 +73,27 @@ const Dashboard = () => {
       </div>
       <div>
         <div className="bg-white rounded-xl border shadow p-4">
-          <h2 className="font-semibold text-black  mb-2">top 5 établissement dans le province</h2>
+          <h2 className="font-bold text-black mb-2">Top 5 établissement dans le province</h2>
           <table className="w-full text-sm">
             <thead>
               <tr>
-                <th className='text-black '>#</th>
-                <th className='text-black '>établissement</th>
-                <th className='text-black '>commune</th>
-                <th className='text-black '>nombre élèves</th>
-                <th className='text-black '>moyenne</th>
-                <th className='text-black '>taux de réussite</th>
+                <th className='text-black font-medium '>#</th>
+                <th className='text-black font-medium '>Etablissement</th>
+                <th className='text-black font-medium '>Commune</th>
+                <th className='text-black font-medium '>Nombre élèves</th>
+                <th className='text-black font-medium '>Moyenne</th>
+                <th className='text-black font-medium '>Taux de réussite</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {tableData.map(row => (
                 <tr key={row.id}>
-                  <td className='text-gray-700'>{row.id}</td>
-                  <td className='text-gray-700'>{row.etablissement}</td>
-                  <td className='text-gray-700'>{row.commune}</td>
-                  <td className='text-gray-700'>{row.eleves}</td>
-                  <td className='text-gray-700'>{row.moyenne}</td>
-                  <td className='text-gray-700'>{row.taux}</td>
+                  <td className='text-gray-500'>{row.id}</td>
+                  <td className='text-gray-500'>{row.etablissement}</td>
+                  <td className='text-gray-500'>{row.commune}</td>
+                  <td className='text-gray-500'>{row.eleves}</td>
+                  <td className='text-gray-500'>{row.moyenne}</td>
+                  <td className='text-gray-500'>{row.taux}</td>
                 </tr>
               ))}
             </tbody>
@@ -104,7 +104,7 @@ const Dashboard = () => {
       {/* Second Section: Bar and Pie Charts */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-white rounded shadow p-4">
-          <h2 className="font-semibold mb-2">moyenne par cycle</h2>
+          <h2 className="font-semibold text-black mb-2">Moyenne par cycle</h2>
           <ResponsiveContainer width="100%" height={150}>
             <BarChart data={barData}>
               <XAxis dataKey="cycle" />
@@ -115,7 +115,7 @@ const Dashboard = () => {
           </ResponsiveContainer>
         </div>
         <div className="bg-white rounded shadow p-4">
-          <h2 className="font-semibold mb-2">teu de reussi des cycle</h2>
+          <h2 className="font-semibold text-black mb-2">Taux de réussi des cycle</h2>
           <ResponsiveContainer width="100%" height={150}>
             <PieChart>
               <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={50} label>
